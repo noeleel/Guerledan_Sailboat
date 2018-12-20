@@ -3,12 +3,12 @@ Pour ce projet Github, nous allons recoder la partie Contrôleur du voilier auto
 
 Variables.cpp ( Basé sur Globals.cpp de UxVCtrl pour la gestion de toutes les variables du projet)
 
-WhichController.cpp ( Définissant quel contrôleur doit être utilisé en fonction du respect de la zone de sécurité et permet de parser les fichiers missions ainsi que les fichiers de configuration)
+WhichController.cpp ( Définissant quel contrôleur doit être utilisé en fonction du respect de la zone de sécurité et permet de parser les fichiers missions ainsi que les fichiers de configuration)(Abbas)
 
 En fonction de WhichController.cpp, on utilise soit Controller.cpp ( Code de M.Le Bars) ou OurController.cpp :
 
 
-Dans OurController.cpp, on retrouve:
+Dans OurController.cpp (Alexandre), on retrouve:
 
 WindEstimator.cpp : Permet de connaître la direction du vent apparent via Machine Learning (Alexandre)
 
@@ -26,7 +26,7 @@ WhichWay.cpp : Basé sur la théorie des graphes, permet de savoir quel chemin p
 A cote de ça, sont codés les fichiers :
 
 
-Sécurité.cpp : qui définit le périmètre de sécurité à respecter en fonction des fichiers de configuration et vérifie aussi les variables estimées en fonction des capteurs.
+Sécurité.cpp (Elodie): qui définit le périmètre de sécurité à respecter en fonction des fichiers de configuration et vérifie aussi les variables estimées en fonction des capteurs.
 
 
 Les fichiers de configuration contenant les missions, le polygone de la zone de sécurité, la position des bouées en GPS et les tolérances de sécurité.

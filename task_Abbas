@@ -1,0 +1,2 @@
+SLAM  s’assure que le bateau suivit bien le trajectoire par le position estimé ( utilisant filtre kalman en mode prédiction). 
+Fonction de sécurité qui s’assure que le bateau est toujours dans la zone de sécurité après de parser la mission demandée.

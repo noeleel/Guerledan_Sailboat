@@ -7,16 +7,30 @@
 #	undef _MSC_VER
 #endif // defined(__GNUC__) || defined(__BORLANDC__)
 
+
+/*
+    File created for the SAILBOAT Project in Guerledan
+    Used for defining the function for navigating with the Sailboat
+*/
+
 #include "Variables.h"
 
-float getLatitude(float latitude = lat_env){
+double guer_boat_x = 0;
+double guer_boat_y = 0;
+double commande_voile = 0;
+double commande_gourvernail = 0;
+double angle_critique = M_PI/3.0;
+bool IsSecure = true;
+
+
+double getLatitude(double latitude = lat_env){
     return latitude;
 };
 
-float getLongitude(float longitude = long_env){
+double getLongitude(double longitude = long_env){
     return longitude;
 };
-float getWindAngle(float wind_angle = Center(psihat)*180.0/M_PI){
+double getWindAngle(double wind_angle = Center(psihat)*180.0/M_PI){
     return wind_angle;
 };
 int getYaw(int yaw = (int)fmod_360_rad2deg(-Center(psihat)-angle_env)){
@@ -28,69 +42,74 @@ int getPitch(int pitch = (int)fmod_360_rad2deg(-Center(thetahat))){
 int getRoll(int roll = (int)fmod_360_rad2deg(Center(phihat))){
     return roll;
 };
-float getHeading(float heading = Center(psihat)){
+double getHeading(double heading = Center(psihat)){
     return heading;
 };
 
-float getHeadingNorth(float heading = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI)){
+double getHeadingNorth(double heading = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI){
     return heading;
 };
-float getWindDirection(float wind_dir = (fmod_2PI(-angle_env-Center(psitwindhat)+M_PI+3.0*M_PI/2.0)+M_PI)*180.0/M_PI){
+double getWindDirection(double wind_dir = (fmod_2PI(-angle_env-Center(psitwindhat)+M_PI+3.0*M_PI/2.0)+M_PI)*180.0/M_PI){
     return wind_dir;
 };
-float getWindSpeed(float wind_speed = vawind){
+double getWindSpeed(double wind_speed = vawind){
     return wind_speed;
 };
-float getNorth(float north = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI)){
+double getNorth(double north = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI){
     return north;
 };
 
-float getWindDirectionNorth( float wind_dir = (fmod_2PI(-psiawind+M_PI+M_PI)+M_PI)*180.0/M_PI){
+double getWindDirectionNorth( double wind_dir = (fmod_2PI(-psiawind+M_PI+M_PI)+M_PI)*180.0/M_PI){
     return wind_dir;
 };
-float getWindSpeedNorth(float wind_speed = Center(vtwindhat)){
+double getWindSpeedNorth(double wind_speed = Center(vtwindhat)){
     return wind_speed;
 };
 
-float getPosition_x(float x = Center(xhat)){
+double getPosition_x(double x = Center(xhat)){ 
     return x;
 };
-float getPosition_y(float y =  Center(yhat)){
+double getPosition_y(double y =  Center(yhat)){
     return y;
 };
-float getGPS_x(float lat = latitude){
+double getGPS_x(double lat){ // latitude
     return lat;
 };
-float getGPS_y(float longi = longitude){
+double getGPS_y(double longi){ // longitude
     return longi;
 };
-float getWaypoint_x(float x = wxb){
+double getWaypoint_x(double x){ // wxb
     return x;
 };
-float getWaypoint_y(float y = wyb){
+double getWaypoint_y(double y){ // wyb
     return y;
 };
-float getGPSWaypoint_x(float lat = wlatb){
+double getGPSWaypoint_x(double lat){ // wlatb
     return lat;
 };
-float getGPSWaypoint_y(float longi = wlongb){
+double getGPSWaypoint_y(double longi){ // wlongb
     return longi;
 };
-float getWaypointDistance(float d = norm_bm){
+double getWaypointDistance(double d){ // norm_bm
     return d;
 };
-float getLineDistance(float d = e){
+double getLineDistance(double d){ // e
     return d;
 };
-float getRudderAngle(float angle = (uw >= 0)? fmod_360_rad2deg(ruddermidangle+uw*(rudderminangle-ruddermidangle)): fmod_360_rad2deg(ruddermidangle+uw*(ruddermidangle-ruddermaxangle))){
+double getRudderAngle(double angle = (uw >= 0)? fmod_360_rad2deg(ruddermidangle+uw*(rudderminangle-ruddermidangle)): fmod_360_rad2deg(ruddermidangle+uw*(ruddermidangle-ruddermaxangle))){
     return angle;
 };
-float getSailMaxAngle(float angle = u*q1*180.0/M_PI){
+double getSailMaxAngle(double angle){ // u*q1*180.0/M_PI
     return angle;
 };
 
 
-/*
-    File created for the SAILBOAT Project in Guerledan
-    Used for defining the function for navigating with the Sailboat
-*/
+double getBall_x(double x = x_ball){
+    return x;
+};
+double getBall_y(double y = y_ball){
+    return y;
+};
+double getBall_z(double z = z_ball){
+    return z;
+};

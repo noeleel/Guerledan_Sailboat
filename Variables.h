@@ -19,59 +19,52 @@
 #include <iostream>
 #include "Config.h"
 
-float getLatitude(float latitude = lat_env);
-float getLongitude(float longitude = long_env);
-float getWindAngle(float wind_angle = Center(psihat)*180.0/M_PI);
+// Define Macro here
+
+extern double guer_boat_x;
+extern double guer_boat_y;
+extern double commande_voile;
+extern double commande_gourvernail;
+extern double angle_critique;
+extern bool IsSecure;
+
+// Getter functions
+
+double getLatitude(double latitude = lat_env);
+double getLongitude(double longitude = long_env);
+double getWindAngle(double wind_angle = Center(psihat)*180.0/M_PI);
 int getYaw(int yaw = (int)fmod_360_rad2deg(-Center(psihat)-angle_env));
 int getPitch(int pitch = (int)fmod_360_rad2deg(-Center(thetahat)));
 int getRoll(int roll = (int)fmod_360_rad2deg(Center(phihat)));
-float getHeading(float heading = Center(psihat));
+double getHeading(double heading = Center(psihat));
 
-float getHeadingNorth(float heading = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI));
-float getWindDirection(float wind_dir = (fmod_2PI(-angle_env-Center(psitwindhat)+M_PI+3.0*M_PI/2.0)+M_PI)*180.0/M_PI);
-float getWindSpeed(float wind_speed = vawind);
-float getNorth(float north = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI));
+double getHeadingNorth(double heading = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI);
+double getWindDirection(double wind_dir = (fmod_2PI(-angle_env-Center(psitwindhat)+M_PI+3.0*M_PI/2.0)+M_PI)*180.0/M_PI);
+double getWindSpeed(double wind_speed = vawind);
+double getNorth(double north = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI);
 
-float getWindDirectionNorth( float wind_dir = (fmod_2PI(-psiawind+M_PI+M_PI)+M_PI)*180.0/M_PI);
-float getWindSpeedNorth(float wind_speed = Center(vtwindhat));
+double getWindDirectionNorth( double wind_dir = (fmod_2PI(-psiawind+M_PI+M_PI)+M_PI)*180.0/M_PI);
+double getWindSpeedNorth(double wind_speed = Center(vtwindhat));
 
-float getPosition_x(float x = Center(xhat));
-float getPosition_y(float y =  Center(yhat));
-float getGPS_x(float lat = latitude);
-float getGPS_y(float longi = longitude);
-float getWaypoint_x(float x = wxb);
-float getWaypoint_y(float y = wyb);
-float getGPSWaypoint_x(float lat = wlatb);
-float getGPSWaypoint_y(float longi = wlongb);
-float getWaypointDistance(float d = norm_bm);
-float getLineDistance(float d = e);
-float getRudderAngle(float angle = (uw >= 0)? fmod_360_rad2deg(ruddermidangle+uw*(rudderminangle-ruddermidangle)): fmod_360_rad2deg(ruddermidangle+uw*(ruddermidangle-ruddermaxangle)));
-float getSailMaxAngle(float angle = u*q1*180.0/M_PI);
+double getPosition_x(double x = Center(xhat));
+double getPosition_y(double y =  Center(yhat));
+double getGPS_x(double lat); // latitude
+double getGPS_y(double longi); // longitude
+double getWaypoint_x(double x); // wxb
+double getWaypoint_y(double y); // wyb
+double getGPSWaypoint_x(double lat); // wlatb
+double getGPSWaypoint_y(double longi); // wlongb
+double getWaypointDistance(double d); // norm_bm
+double getLineDistance(double d); // e
+double getRudderAngle(double angle = (uw >= 0)? fmod_360_rad2deg(ruddermidangle+uw*(rudderminangle-ruddermidangle)): fmod_360_rad2deg(ruddermidangle+uw*(ruddermidangle-ruddermaxangle)));
+double getSailMaxAngle(double angle); // u*q1*180.0/M_PI
 
-// Variables renamed from the Controller of M. LEBARS
+double getBall_x(double x = x_ball);
+double getBall_y(double y = y_ball);
+double getBall_z(double z = z_ball);
+// Setter functions
 
-
-// Variables renamed from the Ball detection of M. LEBARS
 
 #endif // !VARIABLES_H
 
 
-/*
-guer_x
-guer_y
-guer_theta
-guer_omega
-guer_v
-guer_psi_wind
-guer_psi_wind_true
-guer_delta_sail
-guer_delta_rudder
-guer_d_bouee
-guer_L_waypoints
-guer_P_security
-guer_UseVar
-guer_Security
-guer_alpha_ball
-
-+ Autres variables si nécessaire
-*/

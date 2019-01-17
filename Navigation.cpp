@@ -22,9 +22,6 @@ bool vent_favorable(double cap) {
 	}
 }
 
-double commande_voile = 0.0;
-double commande_gouvernail = 0.0;
-
 void navigation_cap_favorable(double theta, double cap) {
 	double deltar = 0.0;
 	if (!vent_favorable(cap))
@@ -63,7 +60,6 @@ bool cap_correct(double theta, double cap, double tolerance = M_PI/12.0) {
 	}
 }
 
-double angle_critique = M_PI/3.0;
 
 void navigation_cap(double theta, double cap, double temps_sequence=100) {
 	static int counter = -1;

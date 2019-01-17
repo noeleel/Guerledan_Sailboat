@@ -17,7 +17,8 @@
 #include "RS232Port.h"
 #include "CoordSystem2Img.h"
 #ifndef DISABLE_OPENCV_SUPPORT
-#include "CvUtils.h"
+#include "CvDraw.h"
+#include "CvProc.h"
 #ifdef ENABLE_CVKINECT2SDKHOOK
 #ifndef INCLUDE_HEADERS_OUTSIDE_CVKINECT2SDKHOOK
 #define INCLUDE_HEADERS_OUTSIDE_CVKINECT2SDKHOOK
@@ -49,6 +50,17 @@
 
 #include "rmatrix.h"
 #include <deque>
+
+// Need to be undefined at the end of the file...
+// min and max might cause incompatibilities with GCC...
+#ifndef _MSC_VER
+#ifndef max
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#endif // !max
+#ifndef min
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif // !min
+#endif // !_MSC_VER
 
 #ifdef _MSC_VER
 // Disable some Visual Studio warnings.
@@ -120,17 +132,29 @@ typedef enum KEYS KEYS;
 
 #define MAX_NB_LABELS 256
 #define MAX_NB_PROCEDURES 256
+#define MAX_NB_REGISTERS 32
 
-#define MAX_NB_VIDEO 3
+#define MAX_NB_OPENCVGUI 5
+
+#define MAX_NB_VIDEO 5
 #define MAX_NB_BLUEVIEW 2
 #define MAX_NB_NMEADEVICE 2
 #define MAX_NB_UBLOX 3
 #define MAX_NB_MAVLINKDEVICE 2
 #define MAX_NB_POLOLU 3
 
+#define MAX_NB_BALL 8
+#define MAX_NB_EXTERNALPROGRAMTRIGGER 8
+
 #define MAX_NB_WP 1024
 
 #define MAX_CFGFILE_SIZE 16384
+
+#define OBJTYPE_BALL 0
+#define OBJTYPE_PIPELINE 1
+#define OBJTYPE_PINGER 2
+#define OBJTYPE_VISUALOBSTACLE 3
+#define OBJTYPE_CARDS 4
 
 // GNSS accuracy levels.
 #define GNSS_ACC_LEVEL_GNSS_NO_FIX 0
@@ -149,6 +173,27 @@ typedef enum KEYS KEYS;
 #define RTK_FIXED 4
 #define RTK_FLOAT 5
 #define GNSS_ESTIMATED_FIX 6
+
+// Sonar image flags.
+#define SONAR_IMG_TYPE_SHIFT 0
+#define SONAR_IMG_DISTANCES_SHIFT 4
+#define SONAR_IMG_CORRECTIONS_SHIFT 8 
+
+#define SONAR_IMG_TYPE_MASK               0x0000000F
+#define SONAR_IMG_DISTANCES_MASK          0x000000F0
+#define SONAR_IMG_CORRECTIONS_MASK        0x0000FF00
+
+#define SONAR_IMG_NORMAL                  0x00000001
+#define SONAR_IMG_WATERFALL               0x00000002
+
+#define SONAR_IMG_FIRST_DISTANCES         0x00000010
+#define SONAR_IMG_ALL_DISTANCES           0x00000020
+
+#define SONAR_IMG_LEVER_ARMS              0x00000100
+#define SONAR_IMG_LEVER_ARMS_PSI          0x00000200
+#define SONAR_IMG_LEVER_ARMS_PSI_POS      0x00000400
+#define SONAR_IMG_LEVER_ARMS_HIST_PSI     0x00000800
+#define SONAR_IMG_LEVER_ARMS_HIST_PSI_POS 0x00001000
 
 // Acoustic modem messages.
 enum ACOUSTIC_MODEM_MESSAGES
@@ -180,8 +225,8 @@ enum STATE
 {
 	INVALID_STATE = -1,
 	DIRECT_TRAJECTORY, // Suivi direct.
-	STARBOARD_TACK_TRAJECTORY, // Bateau au prï¿½s avec vent de tribord.
-	PORT_TACK_TRAJECTORY // Bateau au prï¿½s avec vent de babord.
+	STARBOARD_TACK_TRAJECTORY, // Bateau au près avec vent de tribord.
+	PORT_TACK_TRAJECTORY // Bateau au près avec vent de babord.
 };
 typedef enum STATE STATE;
 
@@ -209,24 +254,27 @@ extern deque<double> wx_vector, wy_vector, wz_vector;
 extern double wagl; // Altitude Above Ground Level.
 extern double lat_home, long_home, alt_home;
 
+extern int gcs_mission_count;
+
 extern double wpstmplat[MAX_NB_WP];
 extern double wpstmplong[MAX_NB_WP];
+extern double wpstmpalt[MAX_NB_WP];
 extern int nbwpstmp;
 extern double wpslat[MAX_NB_WP];
 extern double wpslong[MAX_NB_WP];
+extern double wpsalt[MAX_NB_WP];
 extern int nbWPs, CurWP;
-extern double cap;
 
 // Measurements.
-extern interval x_gps, y_gps, z_gps;
+extern interval x_gps, y_gps, z_gps, psi_gps;
 extern interval phi_ahrs, theta_ahrs, psi_ahrs, omegax_ahrs, omegay_ahrs, omegaz_ahrs, accrx_ahrs, accry_ahrs, accrz_ahrs;
-extern interval vrx_dvl, vry_dvl, vrz_dvl;
+extern interval psi_dvl, vrx_dvl, vry_dvl, vrz_dvl;
 extern interval vrx_of, vry_of, vrz_of;
 extern interval z_pressure;
 // Objects to track, distance control...
 extern double dist;
 // GPS.
-extern double sog, cog, xte, utc;
+extern double sog, xte, utc;
 #define MAX_NB_BYTES_RTCM_PARTS 8192
 //#define MAX_NB_RTCM_PARTS 1024
 //extern vector< deque<unsigned char*> > RTCMuserslist;
@@ -250,6 +298,8 @@ extern deque<interval> xhat_history_vector;
 extern deque<interval> yhat_history_vector;
 extern deque<interval> psihat_history_vector;
 extern deque<interval> vrxhat_history_vector;
+// Up vertical telemeter.
+extern double distance_above;
 // Echosounder.
 extern double altitude_AGL;
 // Modem.
@@ -265,16 +315,27 @@ extern double lights, cameratilt;
 
 extern unsigned int joystick_buttons;
 
+extern unsigned int rc_aux3_sw;
+extern BOOL rc_ail_sw;
+extern BOOL rc_gear_sw;
+extern BOOL rc_ele_sw;
+extern BOOL rc_rud_sw;
+
 extern double rudderminangle, ruddermidangle, ruddermaxangle;
 
 extern double Energy_electronics, Energy_actuators;
 
 #pragma region General parameters
-extern int robid, nbvideo, 
-videoimgwidth, videoimgheight, captureperiod, HorizontalBeam, VerticalBeam; 
+extern int robid;
+extern double roblength, robwidth, robheight;
+extern int nbopencvgui, videoimgwidth, videoimgheight, captureperiod, HorizontalBeam, VerticalBeam; 
+extern BOOL bCropOnResize;
 extern char szVideoRecordCodec[5];
-extern BOOL bEnableOpenCVGUIs[MAX_NB_VIDEO];
-extern BOOL bShowVideoOpenCVGUIs[MAX_NB_VIDEO];
+extern BOOL bEnableOpenCVGUIs[MAX_NB_OPENCVGUI];
+extern BOOL bShowVideoOpenCVGUIs[MAX_NB_OPENCVGUI];
+extern int opencvguiimgwidth[MAX_NB_OPENCVGUI];
+extern int opencvguiimgheight[MAX_NB_OPENCVGUI];
+extern int opencvguiperiod;
 extern BOOL bMAVLinkInterface;
 extern char szMAVLinkInterfacePath[MAX_BUF_LEN];
 extern int MAVLinkInterfaceBaudRate;
@@ -282,6 +343,8 @@ extern int MAVLinkInterfaceTimeout;
 extern int MAVLinkInterface_mavlink_comm;
 extern int MAVLinkInterface_system_id;
 extern int MAVLinkInterface_component_id;
+extern int MAVLinkInterface_target_system;
+extern int MAVLinkInterface_target_component;
 extern BOOL bForceDefaultMAVLink1MAVLinkInterface;
 extern BOOL bDisableMAVLinkInterfaceIN;
 extern BOOL bNMEAInterface;
@@ -313,11 +376,20 @@ extern BOOL bSSC32Interface;
 extern char szSSC32InterfacePath[MAX_BUF_LEN];
 extern int SSC32InterfaceBaudRate;
 extern int SSC32InterfaceTimeout;
+extern BOOL bVideoInterface;
+extern char VideoInterfacePort[MAX_BUF_LEN];
+extern int videoimgwidth_VideoInterface, videoimgheight_VideoInterface, captureperiod_VideoInterface;
+extern int VideoInterfaceTimeout;
+extern BOOL bUDP_VideoInterface;
+extern int guiid_VideoInterface;
+extern int videoid_VideoInterface;
+extern int encodequality_VideoInterface;
 extern BOOL bDisablelognav;
 extern BOOL bCommandPrompt;
 extern BOOL bEcho;
 #pragma endregion
 #pragma region Devices parameters
+extern BOOL bDisableVideo[MAX_NB_VIDEO];
 extern BOOL bDisablegpControl;
 extern BOOL bDisablePathfinderDVL;
 extern BOOL bDisableNortekDVL;
@@ -360,14 +432,17 @@ extern double Kp_wx, Kd_wx, Ki_wx, up_max_wx, ud_max_wx, ui_max_wx,
 u_min_wx, u_max_wx, error_min_wx, error_max_wx, omega_max_wx;
 extern double gamma_infinite; // Angle to go towards the line when far, for line following in rad.
 extern double radius; // Accuracy of line/waypoint following in m.
-extern double betatrav;
-extern double betaarr;
-extern double ksi;
+extern double betaside;
+extern double betarear;
+extern double zeta;
 extern double check_strategy_period;
 extern double sail_update_period;
+extern int sailboattacktype;
+extern int sailformulatype;
 extern int controllerperiod;
 #pragma endregion
 #pragma region Observer parameters
+extern int psi_source, theta_phi_source, x_y_source, z_source;
 extern double z_pressure_acc;
 extern double dvl_acc;
 extern double of_acc;
@@ -389,6 +464,7 @@ extern double GPS_low_acc, GPS_low_acc_HDOP;
 extern int GPS_low_acc_nbsat;
 extern int GPS_min_sat_signal;
 extern double GPS_submarine_depth_limit;
+extern double GPS_SOG_for_valid_COG;
 extern int rangescale, sdir;
 extern int nb_outliers;
 extern double dynamicsonarlocalization_period;
@@ -412,14 +488,20 @@ extern double
 x_max_rand_err, x_bias_err, 
 y_max_rand_err, y_bias_err,
 z_max_rand_err, z_bias_err, 
+phi_max_rand_err, phi_bias_err, 
+theta_max_rand_err, theta_bias_err, 
 psi_max_rand_err, psi_bias_err, 
 vrx_max_rand_err, vrx_bias_err, 
+vry_max_rand_err, vry_bias_err, 
+vrz_max_rand_err, vrz_bias_err, 
 omegaz_max_rand_err, omegaz_bias_err, 
 alpha_max_rand_err, alpha_bias_err, 
 d_max_rand_err, d_bias_err,
 alphavrx, alphaomegaz, alphafvrx, alphafomegaz, alphaz, vzup, 
 alphas, omegas;
 extern double outliers_ratio;
+extern BOOL bNoSimGNSSInsideObstacles;
+extern BOOL bRawSimStateInMAVLinkInterface;
 extern int simulatorperiod;
 #pragma endregion
 
@@ -433,6 +515,10 @@ extern box box_env;
 // Environment variables.
 extern COORDSYSTEM csMap;
 
+// Simulator variables.
+extern double x_sim, y_sim, z_sim, phi_sim, theta_sim, psi_sim, vrx_sim, vry_sim, vrz_sim, omegax_sim, omegay_sim, omegaz_sim;
+extern double alpha_sim, d_sim;
+
 // SonarAltitudeEstimation variables.
 extern BOOL bSonarAltitudeEstimation;
 extern CRITICAL_SECTION SonarAltitudeEstimationCS;
@@ -444,8 +530,9 @@ extern BOOL bExternalVisualLocalization;
 extern CRITICAL_SECTION ExternalVisualLocalizationCS;
 extern CRITICAL_SECTION ExternalVisualLocalizationOverlayImgCS;
 extern IplImage* ExternalVisualLocalizationOverlayImg;
-extern int rmin_externalvisuallocalization, rmax_externalvisuallocalization, gmin_externalvisuallocalization, gmax_externalvisuallocalization, bmin_externalvisuallocalization, bmax_externalvisuallocalization; 
 extern int hmin_externalvisuallocalization, hmax_externalvisuallocalization, smin_externalvisuallocalization, smax_externalvisuallocalization, lmin_externalvisuallocalization, lmax_externalvisuallocalization;
+extern BOOL bHExclusive_externalvisuallocalization, bSExclusive_externalvisuallocalization, bLExclusive_externalvisuallocalization;
+extern int r_selpix_externalvisuallocalization, g_selpix_externalvisuallocalization, b_selpix_externalvisuallocalization; 
 extern double objMinRadiusRatio_externalvisuallocalization, objRealRadius_externalvisuallocalization, objMinDetectionRatio_externalvisuallocalization, objDetectionRatioDuration_externalvisuallocalization; 
 extern rmatrix T_externalvisuallocalization;
 extern double coef1_angle_externalvisuallocalization, coef2_angle_externalvisuallocalization;
@@ -474,66 +561,35 @@ extern int bBrake_wall;
 extern int procid_wall;
 extern double u_wall;
 
-// Pipeline variables.
-extern BOOL bPipelineDetection;
-extern BOOL bPipelineTrackingControl;
-extern CRITICAL_SECTION PipelineCS;
-extern CRITICAL_SECTION PipelineOverlayImgCS;
-extern IplImage* PipelineOverlayImg;
-extern int rmin_pipeline, rmax_pipeline, gmin_pipeline, gmax_pipeline, bmin_pipeline, bmax_pipeline; 
-extern int hmin_pipeline, hmax_pipeline, smin_pipeline, smax_pipeline, lmin_pipeline, lmax_pipeline;
-extern double objMinRadiusRatio_pipeline, objRealRadius_pipeline, objMinDetectionRatio_pipeline, objDetectionRatioDuration_pipeline, d0_pipeline; 
-extern double kh_pipeline, kv_pipeline;
-extern int bBrake_pipeline;
-extern int procid_pipeline;
-extern int videoid_pipeline; 
-extern double u_pipeline;
-extern double detectratio_pipeline;
-extern BOOL bPipelineFound;
-
 // Ball variables.
-extern BOOL bBallDetection;
-extern BOOL bBallTrackingControl;
-extern CRITICAL_SECTION BallCS;
-extern CRITICAL_SECTION BallOverlayImgCS;
-extern IplImage* BallOverlayImg;
-extern int rmin_ball, rmax_ball, gmin_ball, gmax_ball, bmin_ball, bmax_ball; // Not used...
-extern int hmin_ball, hmax_ball, smin_ball, smax_ball, lmin_ball, lmax_ball; // Warning : ]hmin,hmax[ is exclusive...
-extern double objMinRadiusRatio_ball, objRealRadius_ball, objMinDetectionRatio_ball, objDetectionRatioDuration_ball, d0_ball; 
-extern double kh_ball, kv_ball; // Not used...
-extern int lightMin_ball;
-extern double lightPixRatio_ball; 
-extern int bAcoustic_ball;
-extern int bDepth_ball;
-extern int camdir_ball;
-extern int bBrake_ball;
-extern int procid_ball;
-extern int videoid_ball;
-extern bool flag;
-extern double objDistance ;
-extern double objDistance_ball;
-extern double u_ball;
-extern double x_ball, y_ball, z_ball;
-extern double psi_ball; // Not used...
-extern double lat_ball, long_ball, alt_ball;
-extern double heading_ball; // Not used...
-extern double detectratio_ball;
-extern BOOL bBallFound;
-extern int lightStatus_ball;
-
-// Visual obstacle variables.
-extern BOOL bVisualObstacleDetection;
-extern BOOL bVisualObstacleAvoidanceControl;
-extern CRITICAL_SECTION VisualObstacleCS;
-extern CRITICAL_SECTION VisualObstacleOverlayImgCS;
-extern IplImage* VisualObstacleOverlayImg;
-extern int rmin_visualobstacle, rmax_visualobstacle, gmin_visualobstacle, gmax_visualobstacle, bmin_visualobstacle, bmax_visualobstacle;
-extern double obsPixRatio_visualobstacle, obsMinDetectionRatio_visualobstacle, obsDetectionRatioDuration_visualobstacle; 
-extern int bBrake_visualobstacle;
-extern int procid_visualobstacle;
-extern int videoid_visualobstacle;
-extern double u_visualobstacle;
-extern double detectratio_visualobstacle;
+extern BOOL bBallTrackingControl[MAX_NB_BALL];
+extern CRITICAL_SECTION BallCS[MAX_NB_BALL];
+extern CRITICAL_SECTION BallOverlayImgCS[MAX_NB_BALL];
+extern IplImage* BallOverlayImg[MAX_NB_BALL];
+extern int hmin_ball[MAX_NB_BALL], hmax_ball[MAX_NB_BALL], smin_ball[MAX_NB_BALL], smax_ball[MAX_NB_BALL], lmin_ball[MAX_NB_BALL], lmax_ball[MAX_NB_BALL];
+extern BOOL bHExclusive_ball[MAX_NB_BALL], bSExclusive_ball[MAX_NB_BALL], bLExclusive_ball[MAX_NB_BALL];
+extern int r_selpix_ball[MAX_NB_BALL], g_selpix_ball[MAX_NB_BALL], b_selpix_ball[MAX_NB_BALL];
+extern double objMinRadiusRatio_ball[MAX_NB_BALL], objRealRadius_ball[MAX_NB_BALL], objMinDetectionRatio_ball[MAX_NB_BALL], objDetectionRatioDuration_ball[MAX_NB_BALL], d0_ball[MAX_NB_BALL]; 
+extern double kh_ball[MAX_NB_BALL], kv_ball[MAX_NB_BALL];
+extern int lightMin_ball[MAX_NB_BALL];
+extern double lightPixRatio_ball[MAX_NB_BALL]; 
+extern int bAcoustic_ball[MAX_NB_BALL];
+extern int bDepth_ball[MAX_NB_BALL];
+extern int camdir_ball[MAX_NB_BALL];
+extern BOOL bDisableControl_ball[MAX_NB_BALL];
+extern BOOL bBrake_ball[MAX_NB_BALL];
+extern int objtype_ball[MAX_NB_BALL];
+extern double mindistproc_ball[MAX_NB_BALL];
+extern int procid_ball[MAX_NB_BALL];
+extern int videoid_ball[MAX_NB_BALL];
+extern double u_ball[MAX_NB_BALL];
+extern double x_ball[MAX_NB_BALL], y_ball[MAX_NB_BALL], z_ball[MAX_NB_BALL];
+extern double psi_ball[MAX_NB_BALL];
+extern double lat_ball[MAX_NB_BALL], long_ball[MAX_NB_BALL], alt_ball[MAX_NB_BALL];
+extern double heading_ball[MAX_NB_BALL];
+extern double detectratio_ball[MAX_NB_BALL];
+extern BOOL bBallFound[MAX_NB_BALL];
+extern int lightStatus_ball[MAX_NB_BALL];
 
 // Surface visual obstacle variables.
 extern BOOL bSurfaceVisualObstacleDetection;
@@ -550,41 +606,31 @@ extern int videoid_surfacevisualobstacle;
 extern double u_surfacevisualobstacle;
 extern double detectratio_surfacevisualobstacle;
 
+// Obstacle variables.
+extern CRITICAL_SECTION ObstacleCS;
+extern CRITICAL_SECTION ObstacleOverlayImgCS;
+extern IplImage* ObstacleOverlayImg;
+
 // Pinger variables.
-extern BOOL bPingerDetection;
 extern BOOL bPingerTrackingControl;
 extern CRITICAL_SECTION PingerCS;
 extern CRITICAL_SECTION PingerOverlayImgCS;
 extern IplImage* PingerOverlayImg;
-extern int rmin_pinger, rmax_pinger, gmin_pinger, gmax_pinger, bmin_pinger, bmax_pinger; 
-extern int hmin_pinger, hmax_pinger, smin_pinger, smax_pinger, lmin_pinger, lmax_pinger;
-extern double objMinRadiusRatio_pinger, objRealRadius_pinger, objMinDetectionRatio_pinger, objDetectionRatioDuration_pinger; 
 extern double pulsefreq_pinger, pulselen_pinger, pulsepersec_pinger, hyddist_pinger, hydorient_pinger, preferreddir_pinger; 
 extern int bUseFile_pinger;
-extern int bBrakeSurfaceEnd_pinger;
-extern int procid_pinger;
-extern int videoid_pinger; 
 extern double u_pinger;
-extern double detectratio_pinger;
 extern BOOL bPingerFound;
-
-// Missing worker variables.
-extern BOOL bMissingWorkerDetection;
-extern BOOL bMissingWorkerTrackingControl;
-extern CRITICAL_SECTION MissingWorkerCS;
-extern CRITICAL_SECTION MissingWorkerOverlayImgCS;
-extern IplImage* MissingWorkerOverlayImg;
-extern int rmin_missingworker, rmax_missingworker, gmin_missingworker, gmax_missingworker, bmin_missingworker, bmax_missingworker; 
-extern int hmin_missingworker, hmax_missingworker, smin_missingworker, smax_missingworker, lmin_missingworker, lmax_missingworker;
-extern double objMinRadiusRatio_missingworker, objRealRadius_missingworker, objMinDetectionRatio_missingworker, objDetectionRatioDuration_missingworker, d0_missingworker; 
-extern double kh_missingworker, kv_missingworker;
-extern int bBrake_missingworker;
-extern int procid_missingworker;
-extern int videoid_missingworker; 
-extern double u_missingworker;
-extern double detectratio_missingworker;
-extern BOOL bMissingWorkerFound;
 #endif // !DISABLE_OPENCV_SUPPORT
+
+// ExternalProgramTrigger variables.
+extern BOOL bExternalProgramTrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+extern CRITICAL_SECTION ExternalProgramTriggerCS[MAX_NB_EXTERNALPROGRAMTRIGGER];
+extern char ExternalProgramTriggerFileName[MAX_NB_EXTERNALPROGRAMTRIGGER][MAX_BUF_LEN];
+extern int period_externalprogramtrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+extern int retrydelay_externalprogramtrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+extern int nbretries_externalprogramtrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+extern int procid_externalprogramtrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+extern BOOL bExternalProgramTriggerDetected[MAX_NB_EXTERNALPROGRAMTRIGGER];
 
 // Follow me variables.
 extern BOOL bFollowMeTrackingControl;
@@ -600,6 +646,7 @@ extern double forbidx_followme, forbidy_followme, forbidz_followme;
 
 // Simulator variables.
 extern int GNSSqualitySimulator;
+extern BOOL bEnableSimulatedGNSS;
 extern BOOL bEnableSimulatedDVL;
 
 // CISCREA variables.
@@ -627,6 +674,7 @@ extern int AcousticCommandMDM;
 extern BOOL bPauseMDM, bRestartMDM;
 
 // Seanet variables.
+extern int fSeanetOverlayImg;
 extern CRITICAL_SECTION SeanetOverlayImgCS;
 #ifndef DISABLE_OPENCV_SUPPORT
 extern IplImage* SeanetOverlayImg;
@@ -674,6 +722,18 @@ extern BOOL bPauseublox[MAX_NB_UBLOX];
 extern BOOL bRestartublox[MAX_NB_UBLOX];
 
 // MAVLinkDevice variables.
+extern BOOL bDisplayStatusTextMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern int custom_modeMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern int iArmMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern int setattitudetargetperiodMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern int setattitudetargettypeMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern double setattitudetargetrollMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern double setattitudetargetpitchMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern double setattitudetargetyawMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern double setattitudetargetroll_rateMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern double setattitudetargetpitch_rateMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern double setattitudetargetyaw_rateMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+extern double setattitudetargetthrustMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
 extern int GNSSqualityMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
 extern BOOL bPauseMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
 extern BOOL bRestartMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
@@ -707,18 +767,35 @@ extern BOOL bRestartVideo[MAX_NB_VIDEO];
 #endif // !DISABLE_OPENCV_SUPPORT
 #pragma endregion
 
+// VideoRecord variables.
+extern int VideoRecordRequests[MAX_NB_VIDEO];
+extern BOOL bVideoRecordRestart[MAX_NB_VIDEO];
+extern CRITICAL_SECTION VideoRecordRequestsCS[MAX_NB_VIDEO];
+#ifndef DISABLE_OPENCV_SUPPORT
+#ifndef USE_OPENCV_HIGHGUI_CPP_API
+extern CvVideoWriter* videorecordfiles[MAX_NB_VIDEO];
+#else
+extern cv::VideoWriter videorecordfiles[MAX_NB_VIDEO];
+#endif // !USE_OPENCV_HIGHGUI_CPP_API
+#endif // !DISABLE_OPENCV_SUPPORT
+extern char videorecordfilenames[MAX_NB_VIDEO][MAX_BUF_LEN];
+extern FILE* endvideorecordfiles[MAX_NB_VIDEO];
+extern char endvideorecordfilenames[MAX_NB_VIDEO][MAX_BUF_LEN];
+extern int videorecordwidth[MAX_NB_VIDEO], videorecordheight[MAX_NB_VIDEO];
+
 // Other.
 #ifndef DISABLE_OPENCV_SUPPORT
-extern IplImage* dispimgs[MAX_NB_VIDEO];
+extern IplImage* dispimgs[MAX_NB_OPENCVGUI];
 #endif // !DISABLE_OPENCV_SUPPORT
-extern int VideoRecordRequests[MAX_NB_VIDEO];
-extern CRITICAL_SECTION dispimgsCS[MAX_NB_VIDEO];
-extern CRITICAL_SECTION VideoRecordRequestsCS[MAX_NB_VIDEO];
+extern CRITICAL_SECTION dispimgsCS[MAX_NB_OPENCVGUI];
 extern CRITICAL_SECTION SeanetConnectingCS;
 extern CRITICAL_SECTION SeanetDataCS;
 extern CRITICAL_SECTION StateVariablesCS;
 extern CRITICAL_SECTION MissionFilesCS;
-extern CRITICAL_SECTION OpenCVCS;
+extern CRITICAL_SECTION OpenCVGUICS;
+extern CRITICAL_SECTION OpenCVVideoCS;
+extern CRITICAL_SECTION OpenCVVideoRecordCS;
+extern CRITICAL_SECTION RegistersCS;
 extern CRITICAL_SECTION strtimeCS;
 extern STATE state;
 extern double vbat1;
@@ -743,8 +820,6 @@ extern BOOL bStdOutDetailedInfo;
 extern BOOL bDisableAllAlarms;
 extern BOOL bDisableRollWindCorrectionSailboat;
 extern BOOL bEnableBackwardsMotorboat;
-extern BOOL bRearmAutopilot;
-extern BOOL bForceDisarmAutopilot;
 extern BOOL bExit;
 extern BOOL bWaiting;
 extern BOOL bMissionRunning;
@@ -770,16 +845,8 @@ extern int procdefineaddrs[MAX_NB_PROCEDURES];
 extern int procreturnaddrs[MAX_NB_PROCEDURES];
 extern int procstackids[MAX_NB_PROCEDURES];
 extern int procstack;
+extern double registers[MAX_NB_REGISTERS];
 extern char keys[NB_CONFIGURABLE_KEYS];
-
-#ifndef DISABLE_OPENCV_SUPPORT
-#ifndef USE_OPENCV_HIGHGUI_CPP_API
-extern CvVideoWriter* videorecordfiles[MAX_NB_VIDEO];
-#else
-extern cv::VideoWriter videorecordfiles[MAX_NB_VIDEO];
-#endif // !USE_OPENCV_HIGHGUI_CPP_API
-#endif // !DISABLE_OPENCV_SUPPORT
-extern char videorecordfilenames[MAX_NB_VIDEO][MAX_BUF_LEN];
 
 extern FILE* missionfile;
 
@@ -794,27 +861,6 @@ extern char logmissionfilename[MAX_BUF_LEN];
 
 extern FILE* tlogfile;
 extern char tlogfilename[MAX_BUF_LEN];
-
-extern FILE* logexternalvisuallocalizationtaskfile;
-extern char logexternalvisuallocalizationtaskfilename[MAX_BUF_LEN];
-
-extern FILE* logwalltaskfile;
-extern char logwalltaskfilename[MAX_BUF_LEN];
-
-extern FILE* logpipelinetaskfile;
-extern char logpipelinetaskfilename[MAX_BUF_LEN];
-
-extern FILE* logballtaskfile;
-extern char logballtaskfilename[MAX_BUF_LEN];
-
-extern FILE* logpingertaskfile;
-extern char logpingertaskfilename[MAX_BUF_LEN];
-
-extern FILE* logmissingworkertaskfile;
-extern char logmissingworkertaskfilename[MAX_BUF_LEN];
-
-extern FILE* logfollowmetaskfile;
-extern char logfollowmetaskfilename[MAX_BUF_LEN];
 
 inline int GetGNSSlevel(void)
 {
@@ -936,6 +982,143 @@ inline void ComputeGNSSPosition(double Latitude, double Longitude, double Altitu
 	}
 }
 
+inline void Snapshot(void)
+{
+#ifndef DISABLE_OPENCV_SUPPORT
+	int i = 0;
+	double d0 = 0, d1 = 0, d2 = 0;
+	char strtime_snap[MAX_BUF_LEN];
+	char snapfilename[MAX_BUF_LEN];
+	char picsnapfilename[MAX_BUF_LEN];
+	char kmlsnapfilename[MAX_BUF_LEN];
+	FILE* kmlsnapfile = NULL;
+
+	memset(strtime_snap, 0, sizeof(strtime_snap));
+	EnterCriticalSection(&strtimeCS);
+	strcpy(strtime_snap, strtimeex_fns());
+	LeaveCriticalSection(&strtimeCS);
+	for (i = 0; i < MAX_NB_VIDEO; i++)
+	{
+		if (!bDisableVideo[i])
+		{
+			sprintf(snapfilename, "snap%d_%.64s.png", i, strtime_snap);
+			sprintf(picsnapfilename, PIC_FOLDER"snap%d_%.64s.png", i, strtime_snap);
+			EnterCriticalSection(&imgsCS[i]);
+#ifndef USE_OPENCV_HIGHGUI_CPP_API
+			if (!cvSaveImage(picsnapfilename, imgs[i], 0))
+#else
+			if (!cv::imwrite(picsnapfilename, cv::cvarrToMat(imgs[i])))
+#endif // !USE_OPENCV_HIGHGUI_CPP_API
+			{
+				printf("Error saving a snapshot file.\n");
+			}
+			LeaveCriticalSection(&imgsCS[i]);
+			EnvCoordSystem2GPS(lat_env, long_env, alt_env, angle_env, Center(xhat), Center(yhat), Center(zhat), &d0, &d1, &d2);
+			sprintf(kmlsnapfilename, PIC_FOLDER"snap%d_%.64s.kml", i, strtime_snap);
+			kmlsnapfile = fopen(kmlsnapfilename, "w");
+			if (kmlsnapfile == NULL)
+			{
+				printf("Error saving a snapshot file.\n");
+				continue;
+			}
+			fprintf(kmlsnapfile, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+			fprintf(kmlsnapfile, "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n");
+			fprintf(kmlsnapfile, "<Document>\n<name>snap%d_%.64s</name>\n", i, strtime_snap);
+			fprintf(kmlsnapfile, "\t<PhotoOverlay>\n\t\t<name>snap%d_%.64s</name>\n", i, strtime_snap);
+			fprintf(kmlsnapfile, "\t\t<Camera>\n\t\t\t<longitude>%.8f</longitude>\n\t\t\t<latitude>%.8f</latitude>\n\t\t\t<altitude>%.3f</altitude>\n", d1, d0, d2);
+			fprintf(kmlsnapfile, "\t\t\t<heading>%f</heading>\n\t\t\t<tilt>%f</tilt>\n\t\t\t<roll>%f</roll>\n", (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI, 0.0, 0.0);
+			fprintf(kmlsnapfile, "\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n\t\t\t<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>\n\t\t</Camera>\n");
+			fprintf(kmlsnapfile, "\t\t<Style>\n\t\t\t<IconStyle>\n\t\t\t\t<Icon>\n\t\t\t\t\t<href>:/camera_mode.png</href>\n\t\t\t\t</Icon>\n\t\t\t</IconStyle>\n");
+			fprintf(kmlsnapfile, "\t\t\t<ListStyle>\n\t\t\t\t<listItemType>check</listItemType>\n\t\t\t\t<ItemIcon>\n\t\t\t\t\t<state>open closed error fetching0 fetching1 fetching2</state>\n");
+			fprintf(kmlsnapfile, "\t\t\t\t\t<href>http://maps.google.com/mapfiles/kml/shapes/camera-lv.png</href>\n\t\t\t\t</ItemIcon>\n\t\t\t\t<bgColor>00ffffff</bgColor>\n\t\t\t\t<maxSnippetLines>2</maxSnippetLines>\n");
+			fprintf(kmlsnapfile, "\t\t\t</ListStyle>\n\t\t</Style>\n");
+			fprintf(kmlsnapfile, "\t\t<Icon>\n\t\t\t<href>%.255s</href>\n\t\t</Icon>\n", snapfilename);
+			fprintf(kmlsnapfile, "\t\t<ViewVolume>\n\t\t\t<leftFov>-25</leftFov>\n\t\t\t<rightFov>25</rightFov>\n\t\t\t<bottomFov>-16.25</bottomFov>\n\t\t\t<topFov>16.25</topFov>\n\t\t\t<near>7.92675</near>\n\t\t</ViewVolume>\n");
+			fprintf(kmlsnapfile, "\t\t<Point>\n\t\t\t<altitudeMode>relativeToGround</altitudeMode>\n\t\t\t<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>\n\t\t\t<coordinates>%.8f,%.8f,%.3f</coordinates>\n\t\t</Point>\n", d1, d0, d2);
+			fprintf(kmlsnapfile, "\t</PhotoOverlay>\n");
+			fprintf(kmlsnapfile, "</Document>\n</kml>\n");
+			fclose(kmlsnapfile);
+		}
+	}
+#endif // !DISABLE_OPENCV_SUPPORT
+}
+
+// Determine whether (x,y) is inside an obstacle. Return positive (inside), negative (outside), or zero (on an edge) value, correspondingly. 
+// When measureDist == false, the return value is +1, -1, and 0, respectively. 
+// Otherwise, the return value is a signed distance between the point and the nearest obstacle edge.
+inline double CheckInsideObstacle(double x, double y, bool measureDist)
+{
+	double result = -1;
+
+#ifndef DISABLE_OPENCV_SUPPORT
+	int i = 0;
+	double d = 0;
+	vector<cv::Point2f> contours;
+
+	// Environment circles.
+	for (i = 0; i < (int)circles_r.size(); i++)
+	{
+		d = circles_r[i]-sqrt(sqr(circles_x[i]-x)+sqr(circles_y[i]-y));
+		if ((!measureDist)&&(d != 0)) d = sign(d, 0);
+		result = max(d, result);
+	}
+
+	// Environment walls.
+	for (i = 0; i < (int)walls_xa.size(); i++)
+	{
+		contours.push_back(cv::Point2f((float)walls_xa[i], (float)walls_ya[i]));
+		contours.push_back(cv::Point2f((float)walls_xb[i], (float)walls_yb[i]));
+	}
+	if (contours.size() > 0) result = max(cv::pointPolygonTest(contours, cv::Point2f((float)x, (float)y), measureDist), result);
+#else
+	int i = 0, j = 0, c = 0, nvert = 0;
+	double d = 0, Xmin = MAX_UNCERTAINTY, Xmax = -MAX_UNCERTAINTY, Ymin = MAX_UNCERTAINTY, Ymax = -MAX_UNCERTAINTY;
+	std::vector<double> vertx, verty;
+
+	// Environment circles.
+	for (i = 0; i < (int)circles_r.size(); i++)
+	{
+		d = circles_r[i]-sqrt(sqr(circles_x[i]-x)+sqr(circles_y[i]-y));
+		if ((!measureDist)&&(d != 0)) d = sign(d, 0);
+		result = max(d, result);
+	}
+
+	// Environment walls.
+	for (i = 0; i < (int)walls_xa.size(); i++)
+	{
+		Xmin = min(Xmin, walls_xa[i]); Xmin = min(Xmin, walls_xb[i]);
+		Xmax = max(Xmax, walls_xa[i]); Xmax = max(Xmax, walls_xb[i]);
+		Ymin = min(Ymin, walls_ya[i]); Ymin = min(Ymin, walls_yb[i]);
+		Ymax = max(Ymax, walls_ya[i]); Ymax = max(Ymax, walls_yb[i]);
+		vertx.push_back(walls_xa[i]);
+		vertx.push_back(walls_xb[i]);
+		verty.push_back(walls_ya[i]);
+		verty.push_back(walls_yb[i]);
+	}
+	// First check bounding rectangle.
+	if ((x < Xmin)||(x > Xmax)||(y < Ymin)||(y > Ymax))
+	{
+		// Approximation...
+		result = max(-1, result);
+	}
+	else
+	{
+		// Approximation...
+		// https://stackoverflow.com/questions/217578/how-can-i-determine-whether-a-2d-point-is-within-a-polygon
+		nvert = (int)vertx.size();
+		for (i = 0, j = nvert-1; i < nvert; j = i++)
+		{
+			if (((verty[i] > y) != (verty[j]> y)) &&
+				(x < (vertx[j]-vertx[i]) * (y-verty[i]) / (verty[j]-verty[i]) + vertx[i]))
+				c = !c;
+		}
+		if (c) result = max(1, result); else result = max(-1, result);
+	}
+#endif // !DISABLE_OPENCV_SUPPORT
+
+	return result;
+}
+
 inline int InitGlobals(void)
 {
 	int i = 0;
@@ -965,6 +1148,18 @@ inline int InitGlobals(void)
 
 	for (i = 0; i < MAX_NB_MAVLINKDEVICE; i++)
 	{
+		bDisplayStatusTextMAVLinkDevice[i] = FALSE;
+		custom_modeMAVLinkDevice[i] = -1;
+		iArmMAVLinkDevice[i] = -1;
+		setattitudetargetperiodMAVLinkDevice[i] = -1;
+		setattitudetargettypeMAVLinkDevice[i] = -1;
+		setattitudetargetrollMAVLinkDevice[i] = 0;
+		setattitudetargetpitchMAVLinkDevice[i] = 0;
+		setattitudetargetyawMAVLinkDevice[i] = 0;
+		setattitudetargetroll_rateMAVLinkDevice[i] = 0;
+		setattitudetargetpitch_rateMAVLinkDevice[i] = 0;
+		setattitudetargetyaw_rateMAVLinkDevice[i] = 0;
+		setattitudetargetthrustMAVLinkDevice[i] = 0;
 		GNSSqualityMAVLinkDevice[i] = 0;
 		bPauseMAVLinkDevice[i] = FALSE;
 		bRestartMAVLinkDevice[i] = FALSE;
@@ -978,80 +1173,132 @@ inline int InitGlobals(void)
 	}
 
 #ifndef DISABLE_OPENCV_SUPPORT
-	for (i = 0; i < nbvideo; i++)
+	for (i = 0; i < MAX_NB_VIDEO; i++)
 	{
 		InitCriticalSection(&imgsCS[i]);
-		InitCriticalSection(&dispimgsCS[i]);
-		InitCriticalSection(&VideoRecordRequestsCS[i]);
 		imgs[i] = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
 		cvSet(imgs[i], CV_RGB(0, 0, 0), NULL);
-		dispimgs[i] = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-		cvSet(dispimgs[i], CV_RGB(0, 0, 0), NULL);
+		bPauseVideo[i] = FALSE;
+		bRestartVideo[i] = FALSE;
+		InitCriticalSection(&VideoRecordRequestsCS[i]);
 		VideoRecordRequests[i] = 0;
+		bVideoRecordRestart[i] = FALSE;
 #ifndef USE_OPENCV_HIGHGUI_CPP_API
 		videorecordfiles[i] = NULL;
 #endif // !USE_OPENCV_HIGHGUI_CPP_API
 		memset(videorecordfilenames[i], 0, sizeof(videorecordfilenames[i]));
-		bPauseVideo[i] = FALSE;
-		bRestartVideo[i] = FALSE;
+		endvideorecordfiles[i] = NULL;
+		memset(endvideorecordfilenames[i], 0, sizeof(endvideorecordfilenames[i]));
+		videorecordwidth[i] = videoimgwidth;
+		videorecordheight[i] = videoimgheight;
 	}
 
-	ExternalVisualLocalizationOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-	cvSet(ExternalVisualLocalizationOverlayImg, CV_RGB(0, 0, 0), NULL);
-
-	WallOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-	cvSet(WallOverlayImg, CV_RGB(0, 0, 0), NULL);
-
-	PipelineOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-	cvSet(PipelineOverlayImg, CV_RGB(0, 0, 0), NULL);
-
-	BallOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-	cvSet(BallOverlayImg, CV_RGB(0, 0, 0), NULL);
-
-	VisualObstacleOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-	cvSet(VisualObstacleOverlayImg, CV_RGB(0, 0, 0), NULL);
-
-	SurfaceVisualObstacleOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-	cvSet(SurfaceVisualObstacleOverlayImg, CV_RGB(0, 0, 0), NULL);
-
-	PingerOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-	cvSet(PingerOverlayImg, CV_RGB(0, 0, 0), NULL);
-
-	MissingWorkerOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-	cvSet(MissingWorkerOverlayImg, CV_RGB(0, 0, 0), NULL);
-
-	SeanetOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
-	cvSet(SeanetOverlayImg, CV_RGB(0, 0, 0), NULL);
-	colorsonarlidar = CV_RGB(0, 0, 255);
+	for (i = 0; i < nbopencvgui; i++)
+	{
+		InitCriticalSection(&dispimgsCS[i]);
+		dispimgs[i] = cvCreateImage(cvSize(opencvguiimgwidth[i], opencvguiimgheight[i]), IPL_DEPTH_8U, 3);
+		cvSet(dispimgs[i], CV_RGB(0, 0, 0), NULL);
+	}
 #endif // !DISABLE_OPENCV_SUPPORT
 
 	InitCriticalSection(&SonarAltitudeEstimationCS);
+
 #ifndef DISABLE_OPENCV_SUPPORT
 	InitCriticalSection(&ExternalVisualLocalizationCS);
 	InitCriticalSection(&ExternalVisualLocalizationOverlayImgCS);
+	ExternalVisualLocalizationOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
+	cvSet(ExternalVisualLocalizationOverlayImg, CV_RGB(0, 0, 0), NULL);
+
 	InitCriticalSection(&WallCS);
 	InitCriticalSection(&WallOverlayImgCS);
-	InitCriticalSection(&PipelineCS);
-	InitCriticalSection(&PipelineOverlayImgCS);
-	InitCriticalSection(&BallCS);
-	InitCriticalSection(&BallOverlayImgCS);
-	InitCriticalSection(&VisualObstacleCS);
-	InitCriticalSection(&VisualObstacleOverlayImgCS);
+	WallOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
+	cvSet(WallOverlayImg, CV_RGB(0, 0, 0), NULL);
+
+	for (i = 0; i < MAX_NB_BALL; i++)
+	{
+		bBallTrackingControl[i] = FALSE;
+		InitCriticalSection(&BallCS[i]);
+		InitCriticalSection(&BallOverlayImgCS[i]);
+		BallOverlayImg[i] = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
+		cvSet(BallOverlayImg[i], CV_RGB(0, 0, 0), NULL);
+		hmin_ball[i] = 0; hmax_ball[i] = 0; smin_ball[i] = 0; smax_ball[i] = 0; lmin_ball[i] = 0; lmax_ball[i] = 0;
+		bHExclusive_ball[i] = FALSE; bSExclusive_ball[i] = FALSE; bLExclusive_ball[i] = FALSE;
+		r_selpix_ball[i] = 0, g_selpix_ball[i] = 0, b_selpix_ball[i] = 0;
+		objMinRadiusRatio_ball[i] = 0; objRealRadius_ball[i] = 0; objMinDetectionRatio_ball[i] = 0; objDetectionRatioDuration_ball[i] = 0; d0_ball[i] = 0;
+		kh_ball[i] = 0; kv_ball[i] = 0;
+		lightMin_ball[i] = 0;
+		lightPixRatio_ball[i] = 0;
+		bAcoustic_ball[i] = 0;
+		bDepth_ball[i] = 0;
+		camdir_ball[i] = 0;
+		bDisableControl_ball[i] = FALSE;
+		bBrake_ball[i] = FALSE;
+		objtype_ball[i] = 0;
+		mindistproc_ball[i] = 0;
+		procid_ball[i] = 0;
+		videoid_ball[i] = 0;
+		u_ball[i] = 0;
+		x_ball[i] = 0; y_ball[i] = 0; z_ball[i] = 0;
+		psi_ball[i] = 0;
+		lat_ball[i] = 0; long_ball[i] = 0; alt_ball[i] = 0;
+		heading_ball[i] = 0;
+		detectratio_ball[i] = 0;
+		bBallFound[i] = FALSE;
+		lightStatus_ball[i] = 0;
+	}
+
 	InitCriticalSection(&SurfaceVisualObstacleCS);
 	InitCriticalSection(&SurfaceVisualObstacleOverlayImgCS);
+	SurfaceVisualObstacleOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
+	cvSet(SurfaceVisualObstacleOverlayImg, CV_RGB(0, 0, 0), NULL);
+
+	InitCriticalSection(&ObstacleCS);
+	InitCriticalSection(&ObstacleOverlayImgCS);
+	ObstacleOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
+	cvSet(ObstacleOverlayImg, CV_RGB(0, 0, 0), NULL);
+
 	InitCriticalSection(&PingerCS);
 	InitCriticalSection(&PingerOverlayImgCS);
-	InitCriticalSection(&MissingWorkerCS);
-	InitCriticalSection(&MissingWorkerOverlayImgCS);
+	PingerOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
+	cvSet(PingerOverlayImg, CV_RGB(0, 0, 0), NULL);
 #endif // !DISABLE_OPENCV_SUPPORT
+
+	for (i = 0; i < MAX_NB_EXTERNALPROGRAMTRIGGER; i++)
+	{
+		bExternalProgramTrigger[i] = FALSE;
+		InitCriticalSection(&ExternalProgramTriggerCS[i]);
+		memset(ExternalProgramTriggerFileName[i], 0, MAX_BUF_LEN);
+		period_externalprogramtrigger[i] = 100;
+		retrydelay_externalprogramtrigger[i] = 100;
+		nbretries_externalprogramtrigger[i] = -1;
+		procid_externalprogramtrigger[i] = -1;
+		bExternalProgramTriggerDetected[i] = FALSE;
+	}
+
 	InitCriticalSection(&FollowMeCS);
+
 	InitCriticalSection(&MDMCS);
+
 	InitCriticalSection(&SeanetOverlayImgCS);
 	InitCriticalSection(&SeanetConnectingCS);
 	InitCriticalSection(&SeanetDataCS);
+#ifndef DISABLE_OPENCV_SUPPORT
+	SeanetOverlayImg = cvCreateImage(cvSize(videoimgwidth, videoimgheight), IPL_DEPTH_8U, 3);
+	cvSet(SeanetOverlayImg, CV_RGB(0, 0, 0), NULL);
+	colorsonarlidar = CV_RGB(0, 0, 255);
+	fSeanetOverlayImg = SONAR_IMG_LEVER_ARMS|SONAR_IMG_ALL_DISTANCES|SONAR_IMG_NORMAL;
+#endif // !DISABLE_OPENCV_SUPPORT
+
 	InitCriticalSection(&StateVariablesCS);
+
 	InitCriticalSection(&MissionFilesCS);
-	InitCriticalSection(&OpenCVCS);
+
+	InitCriticalSection(&OpenCVGUICS);
+	InitCriticalSection(&OpenCVVideoCS);
+	InitCriticalSection(&OpenCVVideoRecordCS);
+
+	InitCriticalSection(&RegistersCS);
+
 	InitCriticalSection(&strtimeCS);
 
 	StartChrono(&chrono_mission);
@@ -1062,15 +1309,19 @@ inline int InitGlobals(void)
 	memset(procreturnaddrs, 0, sizeof(procreturnaddrs));
 	memset(procstackids, 0, sizeof(procstackids));
 
+	memset(registers, 0, sizeof(registers));
+	
 	bDeleteRoute = TRUE;
 	nbwpstmp = 0;
 	memset(wpstmplat, 0, MAX_NB_WP*sizeof(double));
 	memset(wpstmplong, 0, MAX_NB_WP*sizeof(double));
+	memset(wpstmpalt, 0, MAX_NB_WP*sizeof(double));
 	bWaypointsChanged = TRUE;
 	nbWPs = 0;
 	CurWP = 0;
 	memset(wpslat, 0, MAX_NB_WP*sizeof(double));
 	memset(wpslong, 0, MAX_NB_WP*sizeof(double));
+	memset(wpsalt, 0, MAX_NB_WP*sizeof(double));
 
 	rudderminangle = -0.7;
 	ruddermidangle = 0.0;
@@ -1087,73 +1338,96 @@ inline int ReleaseGlobals(void)
 	nbwpstmp = 0;
 	memset(wpstmplat, 0, MAX_NB_WP*sizeof(double));
 	memset(wpstmplong, 0, MAX_NB_WP*sizeof(double));
+	memset(wpstmpalt, 0, MAX_NB_WP*sizeof(double));
 	bWaypointsChanged = TRUE;
 	nbWPs = 0;
 	CurWP = 0;
 	memset(wpslat, 0, MAX_NB_WP*sizeof(double));
 	memset(wpslong, 0, MAX_NB_WP*sizeof(double));
+	memset(wpsalt, 0, MAX_NB_WP*sizeof(double));
 
 	DeleteCriticalSection(&strtimeCS);
-	DeleteCriticalSection(&OpenCVCS);
+
+	DeleteCriticalSection(&RegistersCS);
+
+	DeleteCriticalSection(&OpenCVVideoRecordCS);
+	DeleteCriticalSection(&OpenCVVideoCS);
+	DeleteCriticalSection(&OpenCVGUICS);
+
 	DeleteCriticalSection(&MissionFilesCS);
+
 	DeleteCriticalSection(&StateVariablesCS);
-	DeleteCriticalSection(&SeanetDataCS);
-	DeleteCriticalSection(&SeanetConnectingCS);
-	DeleteCriticalSection(&SeanetOverlayImgCS);
-	DeleteCriticalSection(&MDMCS);
-	DeleteCriticalSection(&FollowMeCS);
-#ifndef DISABLE_OPENCV_SUPPORT
-	DeleteCriticalSection(&MissingWorkerOverlayImgCS);
-	DeleteCriticalSection(&MissingWorkerCS);
-	DeleteCriticalSection(&PingerOverlayImgCS);
-	DeleteCriticalSection(&PingerCS);
-	DeleteCriticalSection(&SurfaceVisualObstacleOverlayImgCS);
-	DeleteCriticalSection(&SurfaceVisualObstacleCS);
-	DeleteCriticalSection(&VisualObstacleOverlayImgCS);
-	DeleteCriticalSection(&VisualObstacleCS);
-	DeleteCriticalSection(&BallOverlayImgCS);
-	DeleteCriticalSection(&BallCS);
-	DeleteCriticalSection(&PipelineOverlayImgCS);
-	DeleteCriticalSection(&PipelineCS);
-	DeleteCriticalSection(&WallOverlayImgCS);
-	DeleteCriticalSection(&WallCS);
-	DeleteCriticalSection(&ExternalVisualLocalizationOverlayImgCS);
-	DeleteCriticalSection(&ExternalVisualLocalizationCS);
-#endif // !DISABLE_OPENCV_SUPPORT
-	DeleteCriticalSection(&SonarAltitudeEstimationCS);
 
 #ifndef DISABLE_OPENCV_SUPPORT
 	cvReleaseImage(&SeanetOverlayImg);
+#endif // !DISABLE_OPENCV_SUPPORT
+	DeleteCriticalSection(&SeanetDataCS);
+	DeleteCriticalSection(&SeanetConnectingCS);
+	DeleteCriticalSection(&SeanetOverlayImgCS);
 
-	cvReleaseImage(&MissingWorkerOverlayImg);
+	DeleteCriticalSection(&MDMCS);
 
+	DeleteCriticalSection(&FollowMeCS);
+
+	for (i = MAX_NB_EXTERNALPROGRAMTRIGGER-1; i >= 0; i--)
+	{
+		DeleteCriticalSection(&ExternalProgramTriggerCS[i]);
+	}
+
+#ifndef DISABLE_OPENCV_SUPPORT
 	cvReleaseImage(&PingerOverlayImg);
+	DeleteCriticalSection(&PingerOverlayImgCS);
+	DeleteCriticalSection(&PingerCS);
+
+	cvReleaseImage(&ObstacleOverlayImg);
+	DeleteCriticalSection(&ObstacleOverlayImgCS);
+	DeleteCriticalSection(&ObstacleCS);
 
 	cvReleaseImage(&SurfaceVisualObstacleOverlayImg);
-
-	cvReleaseImage(&VisualObstacleOverlayImg);
-
-	cvReleaseImage(&BallOverlayImg);
-
-	cvReleaseImage(&PipelineOverlayImg);
+	DeleteCriticalSection(&SurfaceVisualObstacleOverlayImgCS);
+	DeleteCriticalSection(&SurfaceVisualObstacleCS);
+		
+	for (i = MAX_NB_BALL-1; i >= 0; i--)
+	{
+		cvReleaseImage(&BallOverlayImg[i]);
+		DeleteCriticalSection(&BallOverlayImgCS[i]);
+		DeleteCriticalSection(&BallCS[i]);
+	}
 
 	cvReleaseImage(&WallOverlayImg);
+	DeleteCriticalSection(&WallOverlayImgCS);
+	DeleteCriticalSection(&WallCS);
 
 	cvReleaseImage(&ExternalVisualLocalizationOverlayImg);
+	DeleteCriticalSection(&ExternalVisualLocalizationOverlayImgCS);
+	DeleteCriticalSection(&ExternalVisualLocalizationCS);
+#endif // !DISABLE_OPENCV_SUPPORT
 
-	for (i = nbvideo-1; i >= 0; i--)
+	DeleteCriticalSection(&SonarAltitudeEstimationCS);
+
+#ifndef DISABLE_OPENCV_SUPPORT
+	for (i = nbopencvgui-1; i >= 0; i--)
 	{
-		bRestartVideo[i] = FALSE;
-		bPauseVideo[i] = FALSE;
+		cvReleaseImage(&dispimgs[i]);
+		DeleteCriticalSection(&dispimgsCS[i]);
+	}
+
+	for (i = MAX_NB_VIDEO-1; i >= 0; i--)
+	{
+		videorecordheight[i] = videoimgheight;
+		videorecordwidth[i] = videoimgwidth;
+		memset(endvideorecordfilenames[i], 0, sizeof(endvideorecordfilenames[i]));
+		endvideorecordfiles[i] = NULL;
 		memset(videorecordfilenames[i], 0, sizeof(videorecordfilenames[i]));
 #ifndef USE_OPENCV_HIGHGUI_CPP_API
 		videorecordfiles[i] = NULL;
 #endif // !USE_OPENCV_HIGHGUI_CPP_API
+		bVideoRecordRestart[i] = FALSE;
 		VideoRecordRequests[i] = 0;
-		cvReleaseImage(&dispimgs[i]);
-		cvReleaseImage(&imgs[i]);
 		DeleteCriticalSection(&VideoRecordRequestsCS[i]);
-		DeleteCriticalSection(&dispimgsCS[i]);
+		bRestartVideo[i] = FALSE;
+		bPauseVideo[i] = FALSE;
+		cvReleaseImage(&imgs[i]);
 		DeleteCriticalSection(&imgsCS[i]);
 	}
 #endif // !DISABLE_OPENCV_SUPPORT
@@ -1170,6 +1444,18 @@ inline int ReleaseGlobals(void)
 		bRestartMAVLinkDevice[i] = FALSE;
 		bPauseMAVLinkDevice[i] = FALSE;
 		GNSSqualityMAVLinkDevice[i] = 0;
+		setattitudetargetthrustMAVLinkDevice[i] = 0;
+		setattitudetargetyaw_rateMAVLinkDevice[i] = 0;
+		setattitudetargetpitch_rateMAVLinkDevice[i] = 0;
+		setattitudetargetroll_rateMAVLinkDevice[i] = 0;
+		setattitudetargetyawMAVLinkDevice[i] = 0;
+		setattitudetargetpitchMAVLinkDevice[i] = 0;
+		setattitudetargetrollMAVLinkDevice[i] = 0;
+		setattitudetargettypeMAVLinkDevice[i] = -1;
+		setattitudetargetperiodMAVLinkDevice[i] = -1;
+		iArmMAVLinkDevice[i] = -1;
+		custom_modeMAVLinkDevice[i] = -1;
+		bDisplayStatusTextMAVLinkDevice[i] = FALSE;
 	}
 
 	for (i = MAX_NB_UBLOX-1; i >= 0; i--)
@@ -1195,5 +1481,15 @@ inline int ReleaseGlobals(void)
 
 	return EXIT_SUCCESS;
 }
+
+// min and max might cause incompatibilities with GCC...
+#ifndef _MSC_VER
+#ifdef max
+#undef max
+#endif // max
+#ifdef min
+#undef min
+#endif // min
+#endif // !_MSC_VER
 
 #endif // !GLOBALS_H

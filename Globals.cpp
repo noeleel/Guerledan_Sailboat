@@ -27,27 +27,29 @@ deque<double> wx_vector, wy_vector, wz_vector;
 double wagl = 0;
 double lat_home = 0, long_home = 0, alt_home = 0;
 
+int gcs_mission_count = 0;
+
 double wpstmplat[MAX_NB_WP];
 double wpstmplong[MAX_NB_WP];
+double wpstmpalt[MAX_NB_WP];
 int nbwpstmp = 0;
 double wpslat[MAX_NB_WP];
 double wpslong[MAX_NB_WP];
+double wpsalt[MAX_NB_WP];
 int nbWPs = 0, CurWP = 0;
-double cap = 0.0;
-
 
 // Measurements.
-interval x_gps(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), y_gps(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), z_gps(-MAX_UNCERTAINTY, MAX_UNCERTAINTY);
+interval x_gps(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), y_gps(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), z_gps(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), psi_gps(-MAX_UNCERTAINTY, MAX_UNCERTAINTY);
 interval phi_ahrs(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), theta_ahrs(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), psi_ahrs(-MAX_UNCERTAINTY, MAX_UNCERTAINTY),
 omegax_ahrs(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), omegay_ahrs(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), omegaz_ahrs(-MAX_UNCERTAINTY, MAX_UNCERTAINTY),
 accrx_ahrs(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), accry_ahrs(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), accrz_ahrs(-MAX_UNCERTAINTY, MAX_UNCERTAINTY);
-interval vrx_dvl(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), vry_dvl(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), vrz_dvl(-MAX_UNCERTAINTY, MAX_UNCERTAINTY);
+interval psi_dvl(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), vrx_dvl(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), vry_dvl(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), vrz_dvl(-MAX_UNCERTAINTY, MAX_UNCERTAINTY);
 interval vrx_of(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), vry_of(-MAX_UNCERTAINTY, MAX_UNCERTAINTY), vrz_of(-MAX_UNCERTAINTY, MAX_UNCERTAINTY);
 interval z_pressure(-MAX_UNCERTAINTY, MAX_UNCERTAINTY);
 // Objects to track, distance control...
 double dist = 0;
 // GPS.
-double sog = 0, cog = 0, xte = 0, utc = 0;
+double sog = 0, xte = 0, utc = 0;
 vector< deque<unsigned char> > RTCMuserslist;
 deque<unsigned char> RTCMusers[MAX_NB_UBLOX];
 // Barometer, pressure sensor...
@@ -67,6 +69,8 @@ deque<interval> xhat_history_vector;
 deque<interval> yhat_history_vector;
 deque<interval> psihat_history_vector;
 deque<interval> vrxhat_history_vector;
+// Up vertical telemeter.
+double distance_above = 0;
 // Echosounder.
 double altitude_AGL = 0;
 // Modem.
@@ -82,16 +86,27 @@ double lights = 0, cameratilt = 0;
 
 unsigned int joystick_buttons = 0;
 
+unsigned int rc_aux3_sw = 0;
+BOOL rc_ail_sw = FALSE;
+BOOL rc_gear_sw = FALSE;
+BOOL rc_ele_sw = FALSE;
+BOOL rc_rud_sw = FALSE;
+
 double rudderminangle = 0, ruddermidangle = 0, ruddermaxangle = 0;
 
 double Energy_electronics = 0, Energy_actuators = 0;
 
 #pragma region General parameters
-int robid = 0, nbvideo = 0, 
-videoimgwidth = 0, videoimgheight = 0, captureperiod = 0, HorizontalBeam = 0, VerticalBeam = 0;
+int robid = 0;
+double roblength = 0, robwidth = 0, robheight = 0;
+int nbopencvgui = 0, videoimgwidth = 0, videoimgheight = 0, captureperiod = 0, HorizontalBeam = 0, VerticalBeam = 0;
+BOOL bCropOnResize = FALSE;
 char szVideoRecordCodec[5];
-BOOL bEnableOpenCVGUIs[MAX_NB_VIDEO];
-BOOL bShowVideoOpenCVGUIs[MAX_NB_VIDEO];
+BOOL bEnableOpenCVGUIs[MAX_NB_OPENCVGUI];
+BOOL bShowVideoOpenCVGUIs[MAX_NB_OPENCVGUI];
+int opencvguiimgwidth[MAX_NB_OPENCVGUI];
+int opencvguiimgheight[MAX_NB_OPENCVGUI];
+int opencvguiperiod = 0;
 BOOL bMAVLinkInterface = FALSE;
 char szMAVLinkInterfacePath[MAX_BUF_LEN];
 int MAVLinkInterfaceBaudRate = 0;
@@ -99,6 +114,8 @@ int MAVLinkInterfaceTimeout = 0;
 int MAVLinkInterface_mavlink_comm = 0;
 int MAVLinkInterface_system_id = 0;
 int MAVLinkInterface_component_id = 0;
+int MAVLinkInterface_target_system = 0;
+int MAVLinkInterface_target_component = 0;
 BOOL bForceDefaultMAVLink1MAVLinkInterface = FALSE;
 BOOL bDisableMAVLinkInterfaceIN = FALSE;
 BOOL bNMEAInterface = FALSE;
@@ -130,11 +147,20 @@ BOOL bSSC32Interface = FALSE;
 char szSSC32InterfacePath[MAX_BUF_LEN];
 int SSC32InterfaceBaudRate = 0;
 int SSC32InterfaceTimeout = 0;
+BOOL bVideoInterface = FALSE;
+char VideoInterfacePort[MAX_BUF_LEN];
+int videoimgwidth_VideoInterface = 0, videoimgheight_VideoInterface = 0, captureperiod_VideoInterface = 0;
+int VideoInterfaceTimeout = 0;
+BOOL bUDP_VideoInterface = FALSE;
+int guiid_VideoInterface = -1;
+int videoid_VideoInterface = -1;
+int encodequality_VideoInterface = 0;
 BOOL bDisablelognav = FALSE;
 BOOL bCommandPrompt = FALSE;
 BOOL bEcho = FALSE;
 #pragma endregion
 #pragma region Devices parameters
+BOOL bDisableVideo[MAX_NB_VIDEO];
 BOOL bDisablegpControl = FALSE;
 BOOL bDisablePathfinderDVL = FALSE;
 BOOL bDisableNortekDVL = FALSE;
@@ -161,7 +187,7 @@ BOOL bDisableMiniSSC = FALSE;
 BOOL bDisableIM483I = FALSE;
 #pragma endregion
 #pragma region Controller parameters
-double u_max = 0, uw_max = M_PI/4.0, u_coef = 0, uw_coef = 0;
+double u_max = 0, uw_max = 0, u_coef = 0, uw_coef = 0;
 double Kp = 0, Ki = 0, Kd1 = 0, Kd2 = 0;
 double uw_derivative_max = 0;
 double uw_integral_max = 0;
@@ -175,16 +201,19 @@ double Kp_wy = 0, Kd_wy = 0, Ki_wy = 0, up_max_wy = 0, ud_max_wy = 0, ui_max_wy 
 u_min_wy = 0, u_max_wy = 0, error_min_wy = 0, error_max_wy = 0, omega_max_wy = 0;
 double Kp_wx = 0, Kd_wx = 0, Ki_wx = 0, up_max_wx = 0, ud_max_wx = 0, ui_max_wx = 0, 
 u_min_wx = 0, u_max_wx = 0, error_min_wx = 0, error_max_wx = 0, omega_max_wx = 0;
-double gamma_infinite = M_PI/4.0;
-double radius = 50.0;
-double betatrav = 0;
-double betaarr = 0;
-double ksi = M_PI/3.0;
+double gamma_infinite = 0;
+double radius = 0;
+double betaside = 0;
+double betarear = 0;
+double zeta = 0;
 double check_strategy_period = 0;
 double sail_update_period = 0;
+int sailboattacktype = 0;
+int sailformulatype = 0;
 int controllerperiod = 0;
 #pragma endregion
 #pragma region Observer parameters
+int psi_source = 0, theta_phi_source = 0, x_y_source = 0, z_source = 0;
 double z_pressure_acc = 0;
 double dvl_acc = 0;
 double of_acc = 0;
@@ -206,6 +235,7 @@ double GPS_low_acc = 0, GPS_low_acc_HDOP = 0;
 int GPS_low_acc_nbsat = 0;
 int GPS_min_sat_signal = 0;
 double GPS_submarine_depth_limit = 0;
+double GPS_SOG_for_valid_COG = 0;
 int rangescale = 0, sdir = 0;
 int nb_outliers = 0;
 double dynamicsonarlocalization_period = 0;
@@ -229,14 +259,20 @@ double
 x_max_rand_err = 0, x_bias_err = 0,
 y_max_rand_err = 0, y_bias_err = 0,
 z_max_rand_err = 0, z_bias_err = 0,
+phi_max_rand_err = 0, phi_bias_err = 0, 
+theta_max_rand_err = 0, theta_bias_err = 0, 
 psi_max_rand_err = 0, psi_bias_err = 0, 
 vrx_max_rand_err = 0, vrx_bias_err = 0,
+vry_max_rand_err = 0, vry_bias_err = 0,
+vrz_max_rand_err = 0, vrz_bias_err = 0,
 omegaz_max_rand_err = 0, omegaz_bias_err = 0,
 alpha_max_rand_err = 0, alpha_bias_err = 0, 
 d_max_rand_err = 0, d_bias_err = 0, 
 alphavrx = 0, alphaomegaz = 0, alphafvrx = 0, alphafomegaz = 0, alphaz = 0, vzup = 0, 
 alphas = 0, omegas = 0;
 double outliers_ratio = 0;
+BOOL bNoSimGNSSInsideObstacles = FALSE;
+BOOL bRawSimStateInMAVLinkInterface = FALSE;
 int simulatorperiod = 0;
 #pragma endregion
 
@@ -250,6 +286,10 @@ box box_env;
 // Environment variables.
 COORDSYSTEM csMap;
 
+// Simulator variables.
+double x_sim = 0, y_sim = 0, z_sim = 0, phi_sim = 0, theta_sim = 0, psi_sim = 0, vrx_sim = 0, vry_sim = 0, vrz_sim = 0, omegax_sim = 0, omegay_sim = 0, omegaz_sim = 0;
+double alpha_sim = 0, d_sim = 0;
+
 // SonarAltitudeEstimation variables.
 BOOL bSonarAltitudeEstimation = FALSE;
 CRITICAL_SECTION SonarAltitudeEstimationCS;
@@ -261,8 +301,9 @@ BOOL bExternalVisualLocalization = FALSE;
 CRITICAL_SECTION ExternalVisualLocalizationCS;
 CRITICAL_SECTION ExternalVisualLocalizationOverlayImgCS;
 IplImage* ExternalVisualLocalizationOverlayImg = NULL;
-int rmin_externalvisuallocalization = 0, rmax_externalvisuallocalization = 0, gmin_externalvisuallocalization = 0, gmax_externalvisuallocalization = 0, bmin_externalvisuallocalization = 0, bmax_externalvisuallocalization = 0; 
 int hmin_externalvisuallocalization = 0, hmax_externalvisuallocalization = 0, smin_externalvisuallocalization = 0, smax_externalvisuallocalization = 0, lmin_externalvisuallocalization = 0, lmax_externalvisuallocalization = 0;
+BOOL bHExclusive_externalvisuallocalization = 0, bSExclusive_externalvisuallocalization = 0, bLExclusive_externalvisuallocalization = 0;
+int r_selpix_externalvisuallocalization = 0, g_selpix_externalvisuallocalization = 0, b_selpix_externalvisuallocalization = 0; 
 double objMinRadiusRatio_externalvisuallocalization = 0, objRealRadius_externalvisuallocalization = 0, objMinDetectionRatio_externalvisuallocalization = 0, objDetectionRatioDuration_externalvisuallocalization = 0; 
 rmatrix T_externalvisuallocalization(4,4);
 double coef1_angle_externalvisuallocalization = 0, coef2_angle_externalvisuallocalization = 0;
@@ -291,66 +332,35 @@ int bBrake_wall = 0;
 int procid_wall = 0;
 double u_wall = 0;
 
-// Pipeline variables.
-BOOL bPipelineDetection = FALSE;
-BOOL bPipelineTrackingControl = FALSE;
-CRITICAL_SECTION PipelineCS;
-CRITICAL_SECTION PipelineOverlayImgCS;
-IplImage* PipelineOverlayImg = NULL;
-int rmin_pipeline = 0, rmax_pipeline = 0, gmin_pipeline = 0, gmax_pipeline = 0, bmin_pipeline = 0, bmax_pipeline = 0; 
-int hmin_pipeline = 0, hmax_pipeline = 0, smin_pipeline = 0, smax_pipeline = 0, lmin_pipeline = 0, lmax_pipeline = 0;
-double objMinRadiusRatio_pipeline = 0, objRealRadius_pipeline = 0, objMinDetectionRatio_pipeline = 0, objDetectionRatioDuration_pipeline = 0, d0_pipeline = 0; 
-double kh_pipeline = 0, kv_pipeline = 0;
-int bBrake_pipeline = 0;
-int procid_pipeline = 0;
-int videoid_pipeline = 0; 
-double u_pipeline = 0;
-double detectratio_pipeline = 0;
-BOOL bPipelineFound = FALSE;
-
 // Ball variables.
-BOOL bBallDetection = FALSE;
-BOOL bBallTrackingControl = FALSE;
-CRITICAL_SECTION BallCS;
-CRITICAL_SECTION BallOverlayImgCS;
-IplImage* BallOverlayImg = NULL;
-int rmin_ball = 0, rmax_ball = 0, gmin_ball = 0, gmax_ball = 0, bmin_ball = 0, bmax_ball = 0; 
-int hmin_ball = 0, hmax_ball = 0, smin_ball = 0, smax_ball = 0, lmin_ball = 0, lmax_ball = 0;
-double objMinRadiusRatio_ball = 0, objRealRadius_ball = 0, objMinDetectionRatio_ball = 0, objDetectionRatioDuration_ball = 0, d0_ball = 0; 
-double kh_ball = 0, kv_ball = 0;
-int lightMin_ball = 0;
-double lightPixRatio_ball = 0; 
-int bAcoustic_ball = 0;
-int bDepth_ball = 0;
-int camdir_ball = 0;
-double objDistance = 0;
-bool flag = FALSE;
-double objDistance_ball = 0;
-int bBrake_ball = 0;
-int procid_ball = 0;
-int videoid_ball = 0; 
-double u_ball = 0;
-double x_ball = 0, y_ball = 0, z_ball = 0;
-double psi_ball = 0;
-double lat_ball = 0, long_ball = 0, alt_ball = 0;
-double heading_ball = 0;
-double detectratio_ball = 0;
-BOOL bBallFound = FALSE;
-int lightStatus_ball = 0;
-
-// Visual obstacle variables.
-BOOL bVisualObstacleDetection = FALSE;
-BOOL bVisualObstacleAvoidanceControl = FALSE;
-CRITICAL_SECTION VisualObstacleCS;
-CRITICAL_SECTION VisualObstacleOverlayImgCS;
-IplImage* VisualObstacleOverlayImg = NULL;
-int rmin_visualobstacle = 0, rmax_visualobstacle = 0, gmin_visualobstacle = 0, gmax_visualobstacle = 0, bmin_visualobstacle = 0, bmax_visualobstacle = 0; 
-double obsPixRatio_visualobstacle = 0, obsMinDetectionRatio_visualobstacle = 0, obsDetectionRatioDuration_visualobstacle = 0; 
-int bBrake_visualobstacle = 0;
-int procid_visualobstacle = 0;
-int videoid_visualobstacle = 0; 
-double u_visualobstacle = 0;
-double detectratio_visualobstacle = 0;
+BOOL bBallTrackingControl[MAX_NB_BALL];
+CRITICAL_SECTION BallCS[MAX_NB_BALL];
+CRITICAL_SECTION BallOverlayImgCS[MAX_NB_BALL];
+IplImage* BallOverlayImg[MAX_NB_BALL];
+int hmin_ball[MAX_NB_BALL], hmax_ball[MAX_NB_BALL], smin_ball[MAX_NB_BALL], smax_ball[MAX_NB_BALL], lmin_ball[MAX_NB_BALL], lmax_ball[MAX_NB_BALL];
+BOOL bHExclusive_ball[MAX_NB_BALL], bSExclusive_ball[MAX_NB_BALL], bLExclusive_ball[MAX_NB_BALL];
+int r_selpix_ball[MAX_NB_BALL], g_selpix_ball[MAX_NB_BALL], b_selpix_ball[MAX_NB_BALL]; 
+double objMinRadiusRatio_ball[MAX_NB_BALL], objRealRadius_ball[MAX_NB_BALL], objMinDetectionRatio_ball[MAX_NB_BALL], objDetectionRatioDuration_ball[MAX_NB_BALL], d0_ball[MAX_NB_BALL]; 
+double kh_ball[MAX_NB_BALL], kv_ball[MAX_NB_BALL];
+int lightMin_ball[MAX_NB_BALL];
+double lightPixRatio_ball[MAX_NB_BALL]; 
+int bAcoustic_ball[MAX_NB_BALL];
+int bDepth_ball[MAX_NB_BALL];
+int camdir_ball[MAX_NB_BALL];
+BOOL bDisableControl_ball[MAX_NB_BALL];
+BOOL bBrake_ball[MAX_NB_BALL];
+int objtype_ball[MAX_NB_BALL]; 
+double mindistproc_ball[MAX_NB_BALL];
+int procid_ball[MAX_NB_BALL];
+int videoid_ball[MAX_NB_BALL]; 
+double u_ball[MAX_NB_BALL];
+double x_ball[MAX_NB_BALL], y_ball[MAX_NB_BALL], z_ball[MAX_NB_BALL];
+double psi_ball[MAX_NB_BALL];
+double lat_ball[MAX_NB_BALL], long_ball[MAX_NB_BALL], alt_ball[MAX_NB_BALL];
+double heading_ball[MAX_NB_BALL];
+double detectratio_ball[MAX_NB_BALL];
+BOOL bBallFound[MAX_NB_BALL];
+int lightStatus_ball[MAX_NB_BALL];
 
 // Surface visual obstacle variables.
 BOOL bSurfaceVisualObstacleDetection = FALSE;
@@ -367,41 +377,31 @@ int videoid_surfacevisualobstacle = 0;
 double u_surfacevisualobstacle = 0;
 double detectratio_surfacevisualobstacle = 0;
 
+// Obstacle variables.
+CRITICAL_SECTION ObstacleCS;
+CRITICAL_SECTION ObstacleOverlayImgCS;
+IplImage* ObstacleOverlayImg = NULL;
+
 // Pinger variables.
-BOOL bPingerDetection = FALSE;
 BOOL bPingerTrackingControl = FALSE;
 CRITICAL_SECTION PingerCS;
 CRITICAL_SECTION PingerOverlayImgCS;
 IplImage* PingerOverlayImg = NULL;
-int rmin_pinger = 0, rmax_pinger = 0, gmin_pinger = 0, gmax_pinger = 0, bmin_pinger = 0, bmax_pinger = 0; 
-int hmin_pinger = 0, hmax_pinger = 0, smin_pinger = 0, smax_pinger = 0, lmin_pinger = 0, lmax_pinger = 0;
-double objMinRadiusRatio_pinger = 0, objRealRadius_pinger = 0, objMinDetectionRatio_pinger = 0, objDetectionRatioDuration_pinger = 0; 
 double pulsefreq_pinger = 0, pulselen_pinger = 0, pulsepersec_pinger = 0, hyddist_pinger = 0, hydorient_pinger = 0, preferreddir_pinger = 0; 
 int bUseFile_pinger = 0;
-int bBrakeSurfaceEnd_pinger = 0;
-int procid_pinger = 0;
-int videoid_pinger = 0; 
 double u_pinger = 0;
-double detectratio_pinger = 0;
 BOOL bPingerFound = FALSE;
-
-// Missing worker variables.
-BOOL bMissingWorkerDetection = FALSE;
-BOOL bMissingWorkerTrackingControl = FALSE;
-CRITICAL_SECTION MissingWorkerCS;
-CRITICAL_SECTION MissingWorkerOverlayImgCS;
-IplImage* MissingWorkerOverlayImg = NULL;
-int rmin_missingworker = 0, rmax_missingworker = 0, gmin_missingworker = 0, gmax_missingworker = 0, bmin_missingworker = 0, bmax_missingworker = 0; 
-int hmin_missingworker = 0, hmax_missingworker = 0, smin_missingworker = 0, smax_missingworker = 0, lmin_missingworker = 0, lmax_missingworker = 0;
-double objMinRadiusRatio_missingworker = 0, objRealRadius_missingworker = 0, objMinDetectionRatio_missingworker = 0, objDetectionRatioDuration_missingworker = 0, d0_missingworker = 0; 
-double kh_missingworker = 0, kv_missingworker = 0;
-int bBrake_missingworker = 0;
-int procid_missingworker = 0;
-int videoid_missingworker = 0; 
-double u_missingworker = 0;
-double detectratio_missingworker = 0;
-BOOL bMissingWorkerFound = FALSE;
 #endif // !DISABLE_OPENCV_SUPPORT
+
+// ExternalProgramTrigger variables.
+BOOL bExternalProgramTrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+CRITICAL_SECTION ExternalProgramTriggerCS[MAX_NB_EXTERNALPROGRAMTRIGGER];
+char ExternalProgramTriggerFileName[MAX_NB_EXTERNALPROGRAMTRIGGER][MAX_BUF_LEN];
+int period_externalprogramtrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+int retrydelay_externalprogramtrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+int nbretries_externalprogramtrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+int procid_externalprogramtrigger[MAX_NB_EXTERNALPROGRAMTRIGGER];
+BOOL bExternalProgramTriggerDetected[MAX_NB_EXTERNALPROGRAMTRIGGER];
 
 // Follow me variables.
 BOOL bFollowMeTrackingControl = FALSE;
@@ -417,6 +417,7 @@ double forbidx_followme = 0, forbidy_followme = 0, forbidz_followme = 0;
 
 // Simulator variables.
 int GNSSqualitySimulator = 0;
+BOOL bEnableSimulatedGNSS = TRUE;
 BOOL bEnableSimulatedDVL = FALSE;
 
 // CISCREA variables.
@@ -444,6 +445,7 @@ int AcousticCommandMDM = 0;
 BOOL bPauseMDM = FALSE, bRestartMDM = FALSE;
 
 // Seanet variables.
+int fSeanetOverlayImg = 0;
 CRITICAL_SECTION SeanetOverlayImgCS;
 #ifndef DISABLE_OPENCV_SUPPORT
 IplImage* SeanetOverlayImg = NULL;
@@ -458,6 +460,18 @@ BOOL bRestartBlueView[MAX_NB_BLUEVIEW];
 BOOL bPauseHokuyo = FALSE, bRestartHokuyo = FALSE;
 
 // RPLIDAR variables.
+//int fRPLIDAROverlayImg = 0;
+//deque<double> alpha_RPLIDAR;
+//deque< vector<interval> > d_RPLIDAR;
+//deque<double> t_hist_RPLIDAR;
+//deque<interval> xhat_hist_RPLIDAR;
+//deque<interval> yhat_hist_RPLIDAR;
+//deque<interval> psihat_hist_RPLIDAR;
+//deque<interval> vrxhat_hist_RPLIDAR;
+//CRITICAL_SECTION RPLIDAROverlayImgCS;
+//#ifndef DISABLE_OPENCV_SUPPORT
+//IplImage* RPLIDAROverlayImg = NULL;
+//#endif // !DISABLE_OPENCV_SUPPORT
 BOOL bPauseRPLIDAR = FALSE, bRestartRPLIDAR = FALSE;
 
 // MS580314BA variables.
@@ -491,6 +505,18 @@ BOOL bPauseublox[MAX_NB_UBLOX];
 BOOL bRestartublox[MAX_NB_UBLOX];
 
 // MAVLinkDevice variables.
+BOOL bDisplayStatusTextMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+int custom_modeMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+int iArmMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+int setattitudetargetperiodMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+int setattitudetargettypeMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+double setattitudetargetrollMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+double setattitudetargetpitchMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+double setattitudetargetyawMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+double setattitudetargetroll_rateMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+double setattitudetargetpitch_rateMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+double setattitudetargetyaw_rateMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
+double setattitudetargetthrustMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
 int GNSSqualityMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
 BOOL bPauseMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
 BOOL bRestartMAVLinkDevice[MAX_NB_MAVLINKDEVICE];
@@ -524,18 +550,35 @@ BOOL bRestartVideo[MAX_NB_VIDEO];
 #endif // !DISABLE_OPENCV_SUPPORT
 #pragma endregion
 
+// VideoRecord variables.
+int VideoRecordRequests[MAX_NB_VIDEO];
+BOOL bVideoRecordRestart[MAX_NB_VIDEO];
+CRITICAL_SECTION VideoRecordRequestsCS[MAX_NB_VIDEO];
+#ifndef DISABLE_OPENCV_SUPPORT
+#ifndef USE_OPENCV_HIGHGUI_CPP_API
+CvVideoWriter* videorecordfiles[MAX_NB_VIDEO];
+#else
+cv::VideoWriter videorecordfiles[MAX_NB_VIDEO];
+#endif // !USE_OPENCV_HIGHGUI_CPP_API
+#endif // !DISABLE_OPENCV_SUPPORT
+char videorecordfilenames[MAX_NB_VIDEO][MAX_BUF_LEN];
+FILE* endvideorecordfiles[MAX_NB_VIDEO];
+char endvideorecordfilenames[MAX_NB_VIDEO][MAX_BUF_LEN];
+int videorecordwidth[MAX_NB_VIDEO], videorecordheight[MAX_NB_VIDEO];
+
 // Other.
 #ifndef DISABLE_OPENCV_SUPPORT
-IplImage* dispimgs[MAX_NB_VIDEO];
+IplImage* dispimgs[MAX_NB_OPENCVGUI];
 #endif // !DISABLE_OPENCV_SUPPORT
-int VideoRecordRequests[MAX_NB_VIDEO];
-CRITICAL_SECTION dispimgsCS[MAX_NB_VIDEO];
-CRITICAL_SECTION VideoRecordRequestsCS[MAX_NB_VIDEO];
+CRITICAL_SECTION dispimgsCS[MAX_NB_OPENCVGUI];
 CRITICAL_SECTION SeanetConnectingCS;
 CRITICAL_SECTION SeanetDataCS;
 CRITICAL_SECTION StateVariablesCS;
 CRITICAL_SECTION MissionFilesCS;
-CRITICAL_SECTION OpenCVCS;
+CRITICAL_SECTION OpenCVGUICS;
+CRITICAL_SECTION OpenCVVideoCS;
+CRITICAL_SECTION OpenCVVideoRecordCS;
+CRITICAL_SECTION RegistersCS;
 CRITICAL_SECTION strtimeCS;
 STATE state = INVALID_STATE;
 double vbat1 = 0; 
@@ -560,8 +603,6 @@ BOOL bStdOutDetailedInfo = FALSE;
 BOOL bDisableAllAlarms = FALSE;
 BOOL bDisableRollWindCorrectionSailboat = FALSE;
 BOOL bEnableBackwardsMotorboat = FALSE;
-BOOL bRearmAutopilot = FALSE;
-BOOL bForceDisarmAutopilot = FALSE;
 BOOL bExit = FALSE;
 BOOL bWaiting = FALSE;
 BOOL bMissionRunning = FALSE;
@@ -587,16 +628,8 @@ int procdefineaddrs[MAX_NB_PROCEDURES];
 int procreturnaddrs[MAX_NB_PROCEDURES];
 int procstackids[MAX_NB_PROCEDURES];
 int procstack = 0;
+double registers[MAX_NB_REGISTERS];
 char keys[NB_CONFIGURABLE_KEYS];
-
-#ifndef DISABLE_OPENCV_SUPPORT
-#ifndef USE_OPENCV_HIGHGUI_CPP_API
-CvVideoWriter* videorecordfiles[MAX_NB_VIDEO];
-#else
-cv::VideoWriter videorecordfiles[MAX_NB_VIDEO];
-#endif // !USE_OPENCV_HIGHGUI_CPP_API
-#endif // !DISABLE_OPENCV_SUPPORT
-char videorecordfilenames[MAX_NB_VIDEO][MAX_BUF_LEN];
 
 FILE* missionfile = NULL;
 
@@ -611,24 +644,3 @@ char logmissionfilename[MAX_BUF_LEN];
 
 FILE* tlogfile = NULL;
 char tlogfilename[MAX_BUF_LEN];
-
-FILE* logexternalvisuallocalizationtaskfile = NULL;
-char logexternalvisuallocalizationtaskfilename[MAX_BUF_LEN];
-
-FILE* logwalltaskfile = NULL;
-char logwalltaskfilename[MAX_BUF_LEN];
-
-FILE* logpipelinetaskfile = NULL;
-char logpipelinetaskfilename[MAX_BUF_LEN];
-
-FILE* logballtaskfile = NULL;
-char logballtaskfilename[MAX_BUF_LEN];
-
-FILE* logpingertaskfile = NULL;
-char logpingertaskfilename[MAX_BUF_LEN];
-
-FILE* logmissingworkertaskfile = NULL;
-char logmissingworkertaskfilename[MAX_BUF_LEN];
-
-FILE* logfollowmetaskfile = NULL;
-char logfollowmetaskfilename[MAX_BUF_LEN];

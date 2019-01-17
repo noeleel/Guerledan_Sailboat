@@ -7,11 +7,11 @@
 #	undef _MSC_VER
 #endif // defined(__GNUC__) || defined(__BORLANDC__)
 
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+#ifndef OPENCVGUI_H
+#define OPENCVGUI_H
 
-#include "Config.h"
+#include "Commands.h"
 
-THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam);
+THREAD_PROC_RETURN_VALUE OpenCVGUIThread(void* pParam);
 
-#endif // !CONTROLLER_H
+#endif // !OPENCVGUI_H

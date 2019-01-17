@@ -7,11 +7,11 @@
 #	undef _MSC_VER
 #endif // defined(__GNUC__) || defined(__BORLANDC__)
 
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+#ifndef SURFACEVISUALOBSTACLE_H
+#define SURFACEVISUALOBSTACLE_H
 
 #include "Config.h"
 
-THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam);
+THREAD_PROC_RETURN_VALUE SurfaceVisualObstacleThread(void* pParam);
 
-#endif // !CONTROLLER_H
+#endif // !SURFACEVISUALOBSTACLE_H

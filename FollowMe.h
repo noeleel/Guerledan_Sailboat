@@ -7,11 +7,11 @@
 #	undef _MSC_VER
 #endif // defined(__GNUC__) || defined(__BORLANDC__)
 
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+#ifndef FOLLOWME_H
+#define FOLLOWME_H
 
 #include "Config.h"
 
-THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam);
+THREAD_PROC_RETURN_VALUE FollowMeThread(void* pParam);
 
-#endif // !CONTROLLER_H
+#endif // !FOLLOWME_H

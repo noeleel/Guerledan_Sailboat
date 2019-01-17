@@ -7,11 +7,11 @@
 #	undef _MSC_VER
 #endif // defined(__GNUC__) || defined(__BORLANDC__)
 
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+#ifndef OBSTACLE_H
+#define OBSTACLE_H
 
 #include "Config.h"
 
-THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam);
+THREAD_PROC_RETURN_VALUE ObstacleThread(void* pParam);
 
-#endif // !CONTROLLER_H
+#endif // !OBSTACLE_H

@@ -11,6 +11,8 @@
 #define CONTROLLER_H
 
 #include "Config.h"
+#include "Navigation.h"
+#include "OurController.h"
 
 THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam);
 

@@ -7,11 +7,16 @@
 #	undef _MSC_VER
 #endif // defined(__GNUC__) || defined(__BORLANDC__)
 
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+#ifndef OURCONTROLLER_H
+#define OURCONTROLLER_H
+
+
+/*
+    File created for the SAILBOAT Project in Guerledan
+    Used for defining the function for navigating with the Sailboat
+*/
 
 #include "Config.h"
 
-THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam);
 
-#endif // !CONTROLLER_H
+#endif // !OURCONTROLLER_H

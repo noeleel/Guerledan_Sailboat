@@ -11,17 +11,23 @@
     File created for the SAILBOAT Project in Guerledan
     Used for defining the function for navigating with the Sailboat
 */
-#ifndef DETECTBALL_H
-#define DETECTBALL_H
+#ifndef NAVIGATION_H
+#define NAVIGATION_H
 
 #include "Config.h"
 
+// Define Macro for the functions here
+#define commande_voile 0.0
+#define commande_gourvernail 0.0
+#define angle_critique M_PI/3.0
 
-#endif // !DETECTBALL_H
+bool vent_favorable(double cap);
 
-/* E: Flux video
+void navigation_cap_favorable(double theta, double cap);
 
-Detection Balle par OpenCV
+bool cap_correct(double theta, double cap, double tolerance = M_PI/12.0);
 
-S: Positiond e la balle & sa distance
-*/
+void navigation_cap(double theta, double cap, double temps_sequence=100);
+
+
+#endif // !NAVIGATION_H

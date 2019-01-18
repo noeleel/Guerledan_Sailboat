@@ -48,6 +48,9 @@ extern double y;
 extern double gps_x;
 extern double gps_y;
 
+extern double x_hat;
+extern double y_hat;
+
 extern double waypoint_x;
 extern double waypoint_y;
 extern double gps_waypoint_x;

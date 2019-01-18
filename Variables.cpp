@@ -22,6 +22,8 @@ double commande_gourvernail = 0;
 double angle_critique = M_PI/3.0;
 bool IsSecure = true;
 
+double dt =  0.1;
+
 double latitude;
 double longitude;
 double wind_angle;
@@ -42,6 +44,9 @@ double x;
 double y;
 double gps_x;
 double gps_y;
+
+double x_hat;
+double y_hat;
 
 double waypoint_x;
 double waypoint_y;

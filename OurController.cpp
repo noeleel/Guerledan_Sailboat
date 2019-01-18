@@ -9,8 +9,30 @@
 
 #include "OurController.h"
 
-
 /*
     File created for the SAILBOAT Project in Guerledan
     Used for defining the function for navigating with the Sailboat
 */
+
+double calcul_cap(double x_robot, double y_robot, double x_ball , double y_ball)
+{
+    /*
+    renvoie le cap que doit prendre le navire pour atteindre la bouée
+    */
+    double cap = atan2(y_ball - y_robot, x_ball - x_robot);
+    return cap;
+}
+
+def controller(double x_robot, double y_robot, double theta, double x_ball , double y_ball)
+{
+    /*
+    inputs:
+        - le position et le theta du robot de vecteur d'état
+        - coordonnées x,y du point a atteindre
+    outputs:
+        recalcule des commandes: commande_voile et commande_gourvernail
+    */
+    cap = calcul_cap(double x_robot, double y_robot, double x_ball , double y_ball);
+    navigation_cap(theta,cap);
+    return;
+}

@@ -18,6 +18,10 @@
 
 #include "Config.h"
 #include "Variables.h"
+#include "Navigation.h"
+
+double calcul_cap(double x_robot, double y_robot, double x_ball , double y_ball);
+double controller(double x_robot, double y_robot, double theta, double x_ball , double y_ball);
 
 
 #endif // !OURCONTROLLER_H

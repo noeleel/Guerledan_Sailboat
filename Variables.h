@@ -19,7 +19,7 @@
 #include <iostream>
 #include "Config.h"
 
-// Define Macro here
+// Define Variables here
 
 extern double guer_boat_x;
 extern double guer_boat_y;
@@ -27,6 +27,41 @@ extern double commande_voile;
 extern double commande_gourvernail;
 extern double angle_critique;
 extern bool IsSecure;
+extern double latitude;
+extern double longitude;
+extern double wind_angle;
+
+extern int yaw;
+extern int pitch;
+extern int roll;
+
+extern double heading;
+extern double heading_north;
+extern double wind_dir;
+extern double wind_speed;
+extern double north;
+extern double wind_dir_north;
+extern double wind_speed_north;
+
+extern double x;
+extern double y;
+extern double gps_x;
+extern double gps_y;
+
+extern double waypoint_x;
+extern double waypoint_y;
+extern double gps_waypoint_x;
+extern double gps_waypoint_y;
+
+extern double waypoint_distance;
+extern double line_distance;
+
+extern double rudder_angle;
+extern double sail_max_angle;
+
+extern double ball_x;
+extern double ball_y;
+extern double ball_z;
 
 // Getter functions
 
@@ -62,6 +97,8 @@ double getSailMaxAngle(double angle); // u*q1*180.0/M_PI
 double getBall_x(double x = x_ball);
 double getBall_y(double y = y_ball);
 double getBall_z(double z = z_ball);
+
+double getBalldistance(void);
 // Setter functions
 
 

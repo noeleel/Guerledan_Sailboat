@@ -1,54 +1,44 @@
-// Prevent Visual Studio Intellisense from defining _WIN32 and _MSC_VER when we use 
-// Visual Studio to edit Linux or Borland C++ code.
-#ifdef __linux__
-#	undef _WIN32
-#endif // __linux__
-#if defined(__GNUC__) || defined(__BORLANDC__)
-#	undef _MSC_VER
-#endif // defined(__GNUC__) || defined(__BORLANDC__)
+import sys
+import time
+import cv2
+import numpy as np
+#import Image
+import random
+import math
+import os
+import warnings
+warnings.filterwarnings("ignore")
 
-#include "DetectBall.h"
+def detect_ball_image():
+    N = 0
+    L = ["ball_"+str(i) for i in range(1,9)]
+    ecc_l = []
+    is_it = []
+    image_name = []
+    radius_l = []
+    for x in L :
+        x  = x + '.png'
+        image_name+=[x]
 
-
-/*
-    File created for the SAILBOAT Project in Guerledan
-    Used for defining the function for navigating with the Sailboat
-*/
-double getEccentricity(Moments &mu){
-    double bigSqrt = sqrt( ( mu.m20 - mu.m02 ) *  ( mu.m20 - mu.m02 )  + 4 * mu.m11 * mu.m11  );
-    return (double) ( mu.m20 + mu.m02 + bigSqrt ) / ( mu.m20 + mu.m02 - bigSqrt );
-}
-
-void detect_ball(IplImage* image, IplImage* overlayimage){
-    //unsigned char* data = reinterpret_cast<unsigned char*>(image->imageData);
-	//unsigned char* overlaydata = reinterpret_cast<unsigned char*>(overlayimage->imageData);
-    //CorrectImageBordersRawBGR(data, VIDEO_IMAGE_WIDTH, VIDEO_IMAGE_HEIGHT, 2, 0, 0, 0);
-    cv::Mat initImage = cv::cvarrToMat(image, true);
-    cv::Mat gaussianImage = cv::cvarrToMat(image, false);
-    cv::Mat hSVImage = cv::cvarrToMat(image, false);
-
-    cv::Mat mask;
-    cv::Mat element = getStructuringElement( 2,
-                                       Size( 3, 3 ),
-                                       Point( 1, 1 ) );
-  
-    // Apply Gaussian Blur
-    cv::GaussianBlur( initImage, gaussianImage, Size(11, 11), 0, 0 );
+        # read image from file
+        cvImg = cv2.imread(x)
+        cvImg_blur = cv2.GaussianBlur(cvImg, (11,11),0)
+        # Get the HSV image
+        cvImg_hsv = cv2.cvtColor(cvImg_blur, cv2.COLOR_BGR2HSV)
+        # get dimensions
+        imageHeight, imageWidth, imageChannels = cvImg.shape
     
-    // Get the HSV Images
-    cv::cvtColor(gaussianImage, hSVImage, cv::CV_BGR2HSV);
+
+        # Find the ornage ball
+        lower_orange = (0,80,160)
+        upper_orange = (13,255,255)
     
-    // Create Mask
-    cv::inRange(hSVImage, cv::Scalar(LOWER_H, LOWER_S, LOWER_V), cv::Scalar(UPPER_H, UPPER_S, UPPER_V), mask);
-    /// Apply Mask
-    cv::dilate( mask, mask, element, iterations = 2);
-    cv::erode( mask, mask, element, iterations = 2);
-
-    // Find contours of ball
-
-}
-
- # Find the contours of the orange ball
+        mask = cv2.inRange(cvImg_hsv, lower_orange, upper_orange)
+        mask = cv2.erode(mask, None, iterations=2)
+        mask = cv2.dilate(mask, None, iterations=2)
+    
+    
+        # Find the contours of the orange ball
         ret, thresh = cv2.threshold(mask, 127,255,0)
         im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         M = cv2.moments(thresh)
@@ -123,3 +113,7 @@ void detect_ball(IplImage* image, IplImage* overlayimage){
         print(is_it[i])
         print(radius_l[i])
     cv2.destroyAllWindows()
+
+
+detect_ball_image()
+#print(detect_ball(cv2.imread("ball_3.png")))

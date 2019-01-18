@@ -22,9 +22,10 @@
 #include "Config.h"
 #include "Variables.h"
 
-bool IsItSafe(double x_boat, double y_boat);
+bool IsItSafe(double x_boat, double y_boat); // Should be modified to take into account the environment
 
-bool AssertVariablesClose(void);
+bool AssertVariablesClose(void); // If the variables are too far from the true variables, 
+// take the true values
 
 bool SelectController(bool safe);
 

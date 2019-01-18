@@ -22,6 +22,41 @@ double commande_gourvernail = 0;
 double angle_critique = M_PI/3.0;
 bool IsSecure = true;
 
+double latitude;
+double longitude;
+double wind_angle;
+
+int yaw;
+int pitch;
+int roll;
+
+double heading;
+double heading_north;
+double wind_dir;
+double wind_speed;
+double north;
+double wind_dir_north;
+double wind_speed_north;
+
+double x;
+double y;
+double gps_x;
+double gps_y;
+
+double waypoint_x;
+double waypoint_y;
+double gps_waypoint_x;
+double gps_waypoint_y;
+
+double waypoint_distance;
+double line_distance;
+
+double rudder_angle;
+double sail_max_angle;
+
+double ball_x;
+double ball_y;
+double ball_z;
 
 double getLatitude(double latitude = lat_env){
     return latitude;
@@ -112,4 +147,8 @@ double getBall_y(double y = y_ball){
 };
 double getBall_z(double z = z_ball){
     return z;
+};
+
+double getBalldistance(void){
+    
 };

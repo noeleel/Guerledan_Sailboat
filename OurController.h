@@ -17,6 +17,7 @@
 */
 
 #include "Config.h"
+#include "Variables.h"
 
 
 #endif // !OURCONTROLLER_H

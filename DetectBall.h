@@ -15,8 +15,33 @@
 #define DETECTBALL_H
 
 #include "Config.h"
+#include "Variables.h"
+#include "OSCore.h"
+#include "rmatrix.h"
 
+#include <deque>
+#include <numeric>
+#include <list>
+#include <fstream>
+#include <iostream>
 
+using namespace cv;
+using namespace std;
+
+//Image Macros
+#define VIDEO_IMAGE_WIDTH 320
+#define VIDEO_IMAGE_HEIGHT 240
+
+// HSV Detection Macros
+#define LOWER_H 0
+#define LOWER_S 80
+#define LOWER_V 160
+
+#define UPPER_H 13
+#define UPPER_S 255
+#define UPPER_V 255
+
+void detect_ball(IplImage* image, IplImage* overlayimage)
 #endif // !DETECTBALL_H
 
 /* E: Flux video

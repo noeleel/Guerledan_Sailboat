@@ -12,6 +12,10 @@
 
 #include "Commands.h"
 
+using namespace std;
+using namespace cv;
+
+
 THREAD_PROC_RETURN_VALUE BallThread(void* pParam);
 
 #endif // !BALL_H

@@ -15,9 +15,6 @@ WindEstimator.cpp : Permet de connaître la direction du vent apparent via Machi
 
 PositionEstimator.cpp : Permet de déterminer la position du bateau et de s'assurer que nous suivions bien l'itinéraire voulu par SLAM ( Abbas & Elodie)
 
-DetectBall.cpp ( Basé sur Ball.cpp de UxVCtrl) Permet de détecter la balle et de connaître sa position ( Elodie)
-
-
 WhichWay.cpp : Basé sur la théorie des graphes, permet de savoir quel chemin prendre pour passer de bouée en bouée. ( Elodie)
 
 

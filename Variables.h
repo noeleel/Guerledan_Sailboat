@@ -14,6 +14,7 @@
 /*
     File created for the SAILBOAT Project in Guerledan
     Used for defining the function for navigating with the Sailboat
+    If you need to copy or to set the variables in Global.cpp, you have to use the mutex. 
 */
 
 #include <iostream>
@@ -64,7 +65,8 @@ extern double sail_max_angle;
 
 extern double ball_x;
 extern double ball_y;
-extern double ball_z;
+
+extern double ball_distance;
 
 // Getter functions
 
@@ -99,7 +101,6 @@ double getSailMaxAngle(double angle); // u*q1*180.0/M_PI
 
 double getBall_x(double x = x_ball);
 double getBall_y(double y = y_ball);
-double getBall_z(double z = z_ball);
 
 double getBalldistance(void);
 // Setter functions

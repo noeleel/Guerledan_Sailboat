@@ -18,12 +18,16 @@
 #include "Variables.h"
 #include "OSCore.h"
 #include "rmatrix.h"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
 #include <deque>
 #include <numeric>
 #include <list>
 #include <fstream>
 #include <iostream>
+#include <vector>
+#include <cmath>
 
 using namespace cv;
 using namespace std;
@@ -41,12 +45,14 @@ using namespace std;
 #define UPPER_S 255
 #define UPPER_V 255
 
-void detect_ball(IplImage* image, IplImage* overlayimage)
+#define ELLIPSE_COLOR_R 0
+#define ELLIPSE_COLOR_G 0
+#define ELLIPSE_COLOR_B 255
+
+#define RECTANGLE_COLOR_R 255
+#define RECTANGLE_COLOR_G 0
+#define RECTANGLE_COLOR_B 0
+
+void detect_ball(IplImage* image, IplImage* overlayimage, bool bBallFound);
 #endif // !DETECTBALL_H
 
-/* E: Flux video
-
-Detection Balle par OpenCV
-
-S: Positiond e la balle & sa distance
-*/

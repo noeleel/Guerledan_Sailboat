@@ -15,7 +15,6 @@
 #define NAVIGATION_H
 
 #include "Config.h"
-#include "Variables.h"
 
 // Define Macro for the functions here
 #define commande_voile 0.0

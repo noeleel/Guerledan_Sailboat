@@ -48,7 +48,7 @@ void navigation_cap_favorable(double theta, double cap) {
 }
 
 
-bool cap_correct(double theta, double cap, double tolerance = M_PI/12.0) {
+bool cap_correct(double theta, double cap, double tolerance) {
 	double psiw = Center(psitwindhat); // variable psi dans le code python
 	if (abs(cap - theta) <= tolerance)
 	{
@@ -61,7 +61,7 @@ bool cap_correct(double theta, double cap, double tolerance = M_PI/12.0) {
 }
 
 
-void navigation_cap(double theta, double cap, double temps_sequence=100) {
+void navigation_cap(double theta, double cap, double temps_sequence) {
 	static int counter = -1;
 	//fprintf(stderr, "temps seq: %i\n", counter);
 	double psiw = Center(psitwindhat); // variable psi dans le code python

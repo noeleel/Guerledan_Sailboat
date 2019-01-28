@@ -71,11 +71,10 @@ def detect_ball_image():
                 cv2.ellipse(cvImg, ellipse, (0,0,255), thickness = 2)
 
                 radius = 0
-                if (len(contours) > 0) :
-                    x, y, w, h = cv2.boundingRect(contours[0])                    
-                    ellipse = cv2.fitEllipse(contours[0])
+                if (len(hull) > 0) :
+                    x, y, w, h = cv2.boundingRect(hull)                    
                     cv2.rectangle(cvImg,(x,y),(x+w,y+h),(0,255,0),3)
-                    area = cv2.contourArea(contours[0])
+                    area = cv2.contourArea(hull)
                     radius = math.sqrt(area* 2.54/300)/(math.pi) #cm
                     d = abs(h - w)
                     print("ecc" , d)

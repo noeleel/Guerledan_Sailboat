@@ -63,53 +63,57 @@ double ball_x;
 double ball_y;
 double ball_z;
 
-double getLatitude(double latitude = lat_env){
+double ball_distance;
+
+bool ballFound;
+
+double getLatitude(double latitude){
     return latitude;
 };
 
-double getLongitude(double longitude = long_env){
+double getLongitude(double longitude){
     return longitude;
 };
-double getWindAngle(double wind_angle = Center(psihat)*180.0/M_PI){
+double getWindAngle(double wind_angle){
     return wind_angle;
 };
-int getYaw(int yaw = (int)fmod_360_rad2deg(-Center(psihat)-angle_env)){
+int getYaw(int yaw){
     return yaw;
 };
-int getPitch(int pitch = (int)fmod_360_rad2deg(-Center(thetahat))){
+int getPitch(int pitch){
     return pitch;
 };
-int getRoll(int roll = (int)fmod_360_rad2deg(Center(phihat))){
+int getRoll(int roll){
     return roll;
 };
-double getHeading(double heading = Center(psihat)){
+double getHeading(double heading){
     return heading;
 };
 
-double getHeadingNorth(double heading = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI){
+double getHeadingNorth(double heading){
     return heading;
 };
-double getWindDirection(double wind_dir = (fmod_2PI(-angle_env-Center(psitwindhat)+M_PI+3.0*M_PI/2.0)+M_PI)*180.0/M_PI){
+double getWindDirection(double wind_dir){
     return wind_dir;
 };
-double getWindSpeed(double wind_speed = vawind){
+double getWindSpeed(double wind_speed){
     return wind_speed;
 };
-double getNorth(double north = (fmod_2PI(-angle_env-Center(psihat)+3.0*M_PI/2.0)+M_PI)*180.0/M_PI){
+double getNorth(double north){
     return north;
 };
 
-double getWindDirectionNorth( double wind_dir = (fmod_2PI(-psiawind+M_PI+M_PI)+M_PI)*180.0/M_PI){
+double getWindDirectionNorth( double wind_dir){
     return wind_dir;
 };
-double getWindSpeedNorth(double wind_speed = Center(vtwindhat)){
+double getWindSpeedNorth(double wind_speed){
     return wind_speed;
 };
 
-double getPosition_x(double x = Center(xhat)){ 
+double getPosition_x(double x){ 
     return x;
 };
-double getPosition_y(double y =  Center(yhat)){
+double getPosition_y(double y){
     return y;
 };
 double getGPS_x(double lat){ // latitude
@@ -136,7 +140,7 @@ double getWaypointDistance(double d){ // norm_bm
 double getLineDistance(double d){ // e
     return d;
 };
-double getRudderAngle(double angle = (uw >= 0)? fmod_360_rad2deg(ruddermidangle+uw*(rudderminangle-ruddermidangle)): fmod_360_rad2deg(ruddermidangle+uw*(ruddermidangle-ruddermaxangle))){
+double getRudderAngle(double angle){
     return angle;
 };
 double getSailMaxAngle(double angle){ // u*q1*180.0/M_PI
@@ -144,16 +148,14 @@ double getSailMaxAngle(double angle){ // u*q1*180.0/M_PI
 };
 
 
-double getBall_x(double x = x_ball){
+double getBall_x(double x){
     return x;
 };
-double getBall_y(double y = y_ball){
+double getBall_y(double y){
     return y;
 };
-double getBall_z(double z = z_ball){
-    return z;
-};
+
 
 double getBalldistance(void){
-    
+    return (double) 1.0;
 };

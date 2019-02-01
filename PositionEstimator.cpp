@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <vector>
-using namespace Eigen;
 
 #include "PositionEstimator.h"
 
@@ -20,29 +19,38 @@ void position_estimator( double vitesse, double theta)
 		- destination: position a atteindre
 	*/
 	//Kalman Filter variables
+	Eigen::VectorXd X_hat;
+	Eigen::VectorXd u;
+	Eigen::VectorXd y;
+	Eigen::MatrixXd Gx;
+	Eigen::MatrixXd A;
+	Eigen::MatrixXd C;
+	Eigen::MatrixXd G_beta;
+	Eigen::MatrixXd G_alpha;
 
-	X_hat = VectorXd(2); //  state
+	
+	X_hat = Eigen::VectorXd(2); //  state
 	X_hat << x_hat, y_hat;
 
-	Gx = MatrixXd(2, 2); 	//  covariance matrix
+	Gx = Eigen::MatrixXd(2, 2); 	//  covariance matrix
 	Gx << 1000, 0, 0, 1000;
 
-	u = VectorXd(2);    // external motion
+	u = Eigen::VectorXd(2);    // external motion
 	u << dt*cos(theta)*vitesse, dt*sin(theta)*vitesse;
 
-    y = VectorXd(2);
+    y = Eigen::VectorXd(2);
 	y << 0, 0;
 
-	A = MatrixXd(2, 2); // state transition matrix
+	A = Eigen::MatrixXd(2, 2); // state transition matrix
 	A << 0, 0, 0, 0;
 
-	C = MatrixXd(1, 2);
+	C = Eigen::MatrixXd(1, 2);
 	C << 0, 0;
 
-	G_beta = MatrixXd(1, 1);
+	G_beta = Eigen::MatrixXd(1, 1);
 	G_beta << 0;
 
-	G_alpha = MatrixXd(2, 2);
+	G_alpha = Eigen::MatrixXd(2, 2);
 	G_alpha << 0, 0, 0, 0;
 
 	//call Kalman filter algorithm
@@ -52,14 +60,14 @@ void position_estimator( double vitesse, double theta)
 }
 
 
-void filter_kalman(VectorXd X_hat, MatrixXd Gx, VectorXd u, VectorXd y, MatrixXd G_alpha, MatrixXd G_beta, MatrixXd A, MatrixXd C )
+void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd u, Eigen::VectorXd y, Eigen::MatrixXd G_alpha, Eigen::MatrixXd G_beta, Eigen::MatrixXd A, Eigen::MatrixXd C )
 {
-    VectorXd ytilde = y - C * X_hat;
-    MatrixXd Ct = C.transpose();
-    MatrixXd S = C * Gx * Ct + G_beta;
-    MatrixXd Si = S.inverse();
-    MatrixXd K =  Gx * Ct * Si;
-	I = MatrixXd::Identity(2, 2);
+    Eigen::VectorXd ytilde = y - C * X_hat;
+    Eigen::MatrixXd Ct = C.transpose();
+    Eigen::MatrixXd S = C * Gx * Ct + G_beta;
+    Eigen::MatrixXd Si = S.inverse();
+    Eigen::MatrixXd K =  Gx * Ct * Si;
+	Eigen::MatrixXd I = Eigen::MatrixXd::Identity(2, 2);
 
     //kalman predictor
     X_hat = X_hat + (K * ytilde);
@@ -67,7 +75,7 @@ void filter_kalman(VectorXd X_hat, MatrixXd Gx, VectorXd u, VectorXd y, MatrixXd
 
     // kalman corrector
     X_hat = A * X_hat + u;
-    MatrixXd At = A.transpose();
+    Eigen::MatrixXd At = A.transpose();
     Gx = A * Gx * At + G_alpha;
 
     x_hat = X_hat(0);

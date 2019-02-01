@@ -1,0 +1,6 @@
+model_checkpoint_path: "C:/Users/User/Desktop/Robot voilier/ML/latest_checkpoint"
+all_model_checkpoint_paths: "C:/Users/User/Desktop/Robot voilier/ML/saved_model/model-2941"
+all_model_checkpoint_paths: "C:/Users/User/Desktop/Robot voilier/ML/saved_model/model-3114"
+all_model_checkpoint_paths: "C:/Users/User/Desktop/Robot voilier/ML/saved_model/model-3287"
+all_model_checkpoint_paths: "C:/Users/User/Desktop/Robot voilier/ML/saved_model/model-3460"
+all_model_checkpoint_paths: "C:/Users/User/Desktop/Robot voilier/ML/latest_checkpoint"

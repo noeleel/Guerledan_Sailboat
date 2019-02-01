@@ -145,12 +145,12 @@ def draw_ellipse(c,Γ,η,ax,col): # Gaussian confidence ellipse with artist
     
     
 
-def draw_disk(c,r,ax,col): 
+def draw_disk(c,r,ax,col,α=0.7): 
     #draw_disk(array([[1],[2]]),0.5,ax,"blue")
     e = Ellipse(xy=c, width=2*r, height=2*r, angle=0)   
     ax.add_artist(e)
     e.set_clip_box(ax.bbox)
-    e.set_alpha(0.7)
+    e.set_alpha(α)
     e.set_facecolor(col)
     
     
@@ -165,7 +165,7 @@ def draw_box(x1,x2,y1,y2,ax,col):
     rect.set_facecolor(col)    
 
 def draw_polygon(P,ax,col): 
-    patches = []     
+    patches = []
     patches.append(Polygon(P, True))    
     p = PatchCollection(patches, cmap=matplotlib.cm.jet, alpha=0.4, color=col)
     ax.add_collection(p)
@@ -188,7 +188,7 @@ def draw_arrow(x,y,θ,L,col):
     R=array([[cos(θ),-sin(θ),x],[sin(θ),cos(θ),y],[0,0,1]])
     plot2D(R@M,col)    
     
-def draw_sailboat(x,δs,δr,ψ,awind):
+def draw_sailboat(x,δs,δr,ψ,awind,title='titre',color='red'):
     x=x.flatten()
     θ=x[2]
     hull=array([[-1,5,7,7,5,-1,-1,-1],[-2,-2,-1,1,2,2,-2,-2],[1,1,1,1,1,1,1,1]])
@@ -197,10 +197,11 @@ def draw_sailboat(x,δs,δr,ψ,awind):
     R=array([[cos(θ),-sin(θ),x[0]],[sin(θ),cos(θ),x[1]],[0,0,1]])
     Rs=array([[cos(δs),-sin(δs),3],[sin(δs),cos(δs),0],[0,0,1]])
     Rr=array([[cos(δr),-sin(δr),-1],[sin(δr),cos(δr),0],[0,0,1]])
-    draw_arrow(x[0]+5,x[1],ψ,5*awind,'red')
+    draw_arrow(x[0]+5,x[1],ψ,5*awind,color)
     plot2D(R@hull,'black');       
-    plot2D(R@Rs@sail,'red');       
-    plot2D(R@Rr@rudder,'red');
+    plot2D(R@Rs@sail,color);       
+    plot2D(R@Rr@rudder,color);
+    plt.title(title)
 
     	
 def draw_car(x):
@@ -304,7 +305,7 @@ def loadcsv(file1):
 
 
 def init_figure(xmin,xmax,ymin,ymax): 
-    fig = figure(0)
+    fig = figure(0, figsize = (20,10))
     ax = fig.add_subplot(111, aspect='equal')	
     ax.xmin=xmin
     ax.xmax=xmax

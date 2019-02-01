@@ -3,6 +3,7 @@ from fonction_etat import f # Physical model of the sailboat
 import numpy as np
 from random import shuffle
 
+<<<<<<< 1b96ed7dda1dfde76a105257c26c18fd3990ba0d
 # parse a file for having the graph of buoys
 
 X_MAX_LIM = 60
@@ -135,3 +136,7 @@ if __name__=="__main__":
     List = mission_djikistra(Matrix)
     path(List)
     plt.show()
+=======
+from roblib import *
+import numpy as np
+>>>>>>> Testing WhichWay

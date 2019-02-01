@@ -8,7 +8,7 @@ def get_position(X,destination):
 		- X : vecteur d'état du robot
 		- destination: position a atteindre
 	"""
-	print(destination)
+#	print(destination)
 	v = X[3,0] # vitesse
 	x = np.array([[X[0,0]],[X[1,0]]]) # position
 
@@ -23,12 +23,12 @@ def get_position(X,destination):
 	# calcule le cap où le robot doit avancer vers la bouee 
 	cap = X[2,0]
 	# cap = np.arctan2(destination[1] - x[1,0],destination[0] - x[0,0])
-	print(cap)
+#	print(cap)
 	# estimation de position
 	uk = dt* np.array([[np.cos(cap)],[np.sin(cap)]])*v
 	x,get_position.Gx = kalman(x,get_position.Gx,uk,y,Galpha,Gbeta,A,C)
-	print(x)
-	X[0,0], X[1,0] = x[0,0,0], x[0,1,0]
+#	print(x)
+	X[0,0], X[1,0] = x[0,0], x[1,0]
 	pass
 get_position.Gx = np.zeros((2,2))
 

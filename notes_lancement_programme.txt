@@ -1,0 +1,75 @@
+uxvsim - départ voilier + param simulateur
+
+Lancer uxvctrl release.bat
+
+uvxctrl bundle
+-> changement des ports, selection des périphériques du navires (gopro)
+dans le fivhier ucvctrl: config + exe
+ublox0.txt: ports de connection (parametres pour la station météo)
+razorAHRS0.txt: pareil que pour la station météo mais pour le GPS Altitude and heading reference system /!\ attention: parametre pour changement angle razor pour le bateau en bas du fichier
+pololu0.txt: fichier config voilier - pas besoin de modif
+voilier simulé : 2 appareils gèrent les cerveaux moteurs, volier réel: la pololu gère tout
+
+uxvcontrol.txt: choisit les outils qu'on active
+bDisableIM483I - pour simu
+bDisableSSC32 - pour simu
+pololu0 - pour le vrai voilier
+
+bDisablegpControl - pour mettre une caméra en mode simulé (pour la vraie gopro, pas le fichier pré enregistré)
+
+utiliser la vraie gopro avec voilier: gp activé, video0.txt remplacé par le contenu de video0gopro
+utiliser sans gopro, video noire: gp off, video0nogopro
+gopro + simulateur: connecter la gopro au pc, activer gpcontrol et mettre videogopro dans video0
+simulateur + ma camera: copier video_no_gopro et remplacer dummy par 0 ou 1 ...
+
+
+pour lancer projet controller: ouvrir uxv solution dans le bundle, uxvctrl
+controler.cpp - modifier notre code
+recompiler sous visual studio en x86 debug ou release
+
+VSPE - créer un port serie virtuel et le lier avec un port TCP (5001 actuellement)(voir bNMEAInterface dans UxVCtrl.txt)
+lancer vspe simu depuis le bureau
+(éventuellement configurer la connection sur opencpn - cf fichier readmelaptop dans BRAVE sur le drive)
+
+
+le vrai voilier lance une mission par défaut, définie dans mission.txt dans le dossier uxvctrl
+cette mission par défaut attend des infos d'opencpn
+si il a pas de waypoint, il fait des ronds pour rester sur place
+si le programme est tué sur le bateau, il faut le relancer pour guider depuis opencpn mission.txt
+
+
+dans le fichier en c:
+center psihat pour le cap
+center xhat et center yhat pour x,y
+center(psitwindhat) - angle du vecteur vent - wind true - ou va le vent
+center thetahat et phihat (theta tangage phi roulis)
+center accrxhat, y, z acceleration repère relatif au bateau
+center omegaxhat,y,z
+
+liste de variables dans globals.cpp - certaines inutilisables
+
+
+
+Pour linux:
+
+/BRAVE/UxVSim : make clean
+                make 
+                ./UxVSim
+
+BRAVE/UxVCtrl_Bundle/UxVCtrl : openCPN : cmake-gui : configure :ENABLE_AUTO_DOWNLOAD
+																OPENCV_2413
+													 Generate
+
+
+							   compilation  make clean
+			                                make  
+			                               ./UxVCtrl
+
+pour le porte serie et Opencpn : sudo socat -d -d PTY,raw,echo=0,link=/dev/ttyVUSB0,mode=666 tcp:127.0.0.1:5001
+
+                     
+
+
+
+
+

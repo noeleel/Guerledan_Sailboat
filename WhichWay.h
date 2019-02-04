@@ -11,6 +11,25 @@
 #define WHICHWAY_H
 
 
+<<<<<<< f18921b102f1927e95f9e63c7177a61528cb0fb5
+=======
+/*
+    File created for the SAILBOAT Project in Guerledan
+    Used for defining the function for navigating with the Sailboat
+    If you need to copy or to set the variables in Global.cpp, you have to use the mutex. 
+*/
+
+#include <iostream>
+#include "Config.h"
+#include "Variables.h"
+#include "math.h"
+
+
+
+#endif // !WHICHWAY_H
+
+
+>>>>>>> WhichWay
 /*
     File created for the SAILBOAT Project in Guerledan
     Used for defining the function for navigating with the Sailboat

@@ -25,11 +25,19 @@ bool IsItSafe(){
 };
 
 bool AssertVariablesClose(void){
+<<<<<<< f18921b102f1927e95f9e63c7177a61528cb0fb5
     bool InSafety = true;
     // Check for the safety of x and y 
     double real_x_boat = getPosition_x();
     double real_y_boat = getPosition_y();
     if ((abs(guer_boat_x - real_x_boat) < 10) || (abs(guer_boat_y - real_y_boat) < 10))
+=======
+
+    bool InSafety = true;
+    double real_x_boat = getPosition_x();
+    double real_y_boat = getPosition_y();
+    if (abs(guer_boat_x - real_x_boat) < 1 and abs(guer_boat_y == real_y_boat) < 1)
+>>>>>>> WhichWay
         InSafety = true;
     else
         InSafety = false;

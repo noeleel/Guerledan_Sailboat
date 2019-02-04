@@ -22,12 +22,21 @@
 
 int compute_adjacency(float distance, float alpha, float r_vision){
     if (distance*tan(alpha) <= r_vision)
+<<<<<<< f18921b102f1927e95f9e63c7177a61528cb0fb5
         return 1;
     else
         return 0;
 }
 
 void compute_matrix(double List_of_buoys[4][2], int Matrix[4][4]){
+=======
+        return 1
+    else
+        return 0
+}
+
+void compute_matrix(double[4][2] List_of_buoys,int[4][4] Matrix){
+>>>>>>> WhichWay
         int i = 0;
         int j = 0;
         float distance = 0;
@@ -38,13 +47,18 @@ void compute_matrix(double List_of_buoys[4][2], int Matrix[4][4]){
                 if (i==j)
                     Matrix[i][j] = 1;
                 else{
+<<<<<<< f18921b102f1927e95f9e63c7177a61528cb0fb5
                     distance = sqrt(pow(List_of_buoys[i][0] - List_of_buoys[j][0],2) + pow(List_of_buoys[i][1] - List_of_buoys[j][1],2));
+=======
+                    distance = sqrt(pow(List_of_buoys[i][0] - List_of_buoys[j][0],2) + pow(List_of_buoys[i][1] - List_of_buoys[j][1],2))
+>>>>>>> WhichWay
                     Matrix[i][j] = compute_adjacency(distance, alpha_max, r_vision);
                 }
             }
         }
 }
 
+<<<<<<< f18921b102f1927e95f9e63c7177a61528cb0fb5
 void mission_Indices(int List_indices[4] , double List_of_buoys[4][2]){
     int i = 0;
     int j = 0;
@@ -56,4 +70,20 @@ void mission_Indices(int List_indices[4] , double List_of_buoys[4][2]){
             List_indices[(i+1)%4]= i+1;
         }
     }
+=======
+int[4] mission_Indices(int[4][2]List_of_buoys){
+    int[4] List_indices;
+    int i = 0;
+    int j = 0;
+    List_indices[0] = 1;
+    int[4][4]Adjacency_Matrix;
+    compute_matrix(List_of_buoys, Adjacency_Matrix)
+    for(i=0; i<4; i++){
+        if (Adjacency_Matrix[i][(i+1)%4] == 1 and i!=j){
+            List_indices[(i+1)%4]= i+1;
+        }
+    }
+    return List_indices;
+
+>>>>>>> WhichWay
 }

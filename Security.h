@@ -22,6 +22,8 @@
 #include "Config.h"
 #include "Variables.h"
 
+
+// Define the safety Zone here 
 bool IsItSafe(double x_boat, double y_boat); // Should be modified to take into account the environment
 
 bool AssertVariablesClose(void); // If the variables are too far from the true variables, 

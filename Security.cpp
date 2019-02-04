@@ -27,6 +27,14 @@ bool IsItSafe(double x_boat, double y_boat){
 
 bool AssertVariablesClose(void){
 
+    bool InSafety = true;
+    double real_x_boat = getPosition_x();
+    double real_y_boat = getPosition_y();
+    if (abs(guer_boat_x - real_x_boat) < 1 and abs(guer_boat_y == real_y_boat) < 1)
+        InSafety = true;
+    else
+        InSafety = false;
+    return InSafety;
 }
 
 bool SelectController(bool safe){

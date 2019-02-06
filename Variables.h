@@ -79,6 +79,10 @@ extern bool ballFound;
 
 extern double x_hat;
 extern double y_hat;
+<<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
+=======
+extern double dt;
+>>>>>>> MaJ Github
 
 extern cv::Mat ovlImage;
 

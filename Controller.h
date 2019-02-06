@@ -16,6 +16,7 @@
 #include "OurController.h"
 #include "Security.h"
 #include "Variables.h"
+<<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 
 
 #define Origin_lat 48.1997 // 48 11.9791 N 003 00.9541 W
@@ -26,6 +27,8 @@
 
 #define Ball_2_lat 48.1995 // 48°11,9690'N 3°0.8840'O
 #define Ball_2_long -3.01473 
+=======
+>>>>>>> MaJ Github
 
 THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam);
 

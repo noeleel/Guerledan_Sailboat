@@ -27,9 +27,15 @@
 using namespace Eigen;
 
 void define_var();
+<<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 
 void position_estimator(double vitesse, double theta, double dt);
 
+=======
+
+void position_estimator(double vitesse, double theta);
+
+>>>>>>> MaJ Github
 void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd u, Eigen::VectorXd z,Eigen::MatrixXd G_alpha, Eigen::MatrixXd G_beta, Eigen::MatrixXd A, Eigen::MatrixXd C );
 
 

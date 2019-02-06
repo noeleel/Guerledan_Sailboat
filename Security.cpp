@@ -25,6 +25,7 @@ bool IsItSafe(){
 };
 
 bool AssertVariablesClose(void){
+<<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 <<<<<<< f18921b102f1927e95f9e63c7177a61528cb0fb5
     bool InSafety = true;
     // Check for the safety of x and y 
@@ -33,14 +34,24 @@ bool AssertVariablesClose(void){
     if ((abs(guer_boat_x - real_x_boat) < 10) || (abs(guer_boat_y - real_y_boat) < 10))
 =======
 
+=======
+>>>>>>> MaJ Github
     bool InSafety = true;
+    // Check for the safety of x and y 
     double real_x_boat = getPosition_x();
     double real_y_boat = getPosition_y();
+<<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
     if (abs(guer_boat_x - real_x_boat) < 1 and abs(guer_boat_y == real_y_boat) < 1)
 >>>>>>> WhichWay
+=======
+    if ((abs(guer_boat_x - real_x_boat) < 10) || (abs(guer_boat_y - real_y_boat) < 10))
+>>>>>>> MaJ Github
         InSafety = true;
     else
         InSafety = false;
+    // Check for the safety of the speed
+
+    // Check for the safety of the wind 
     return InSafety;
 }
 

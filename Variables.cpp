@@ -64,6 +64,10 @@ double ball_radius;
 
 bool ballFound;
 
+<<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
+=======
+double dt =  0.1;
+>>>>>>> MaJ Github
 double x_hat;
 double y_hat;
 double List_of_buoys[4][2];

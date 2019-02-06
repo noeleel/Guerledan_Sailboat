@@ -24,11 +24,14 @@
 #include "Variables.h"
 #include "math.h"
 
+int compute_adjacency(float distance, float alpha, float r_vision);
+
+void compute_matrix(double List_of_buoys[4][2], int Matrix[4][4]);
+
+void mission_Indices(int List_indices[4] , double List_of_buoys[4][2]);
 
 
-#endif // !WHICHWAY_H
-
-
+<<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 >>>>>>> WhichWay
 /*
     File created for the SAILBOAT Project in Guerledan
@@ -48,4 +51,6 @@ void compute_matrix(double List_of_buoys[4][2], int Matrix[4][4]);
 void mission_Indices(int List_indices[4] , double List_of_buoys[4][2]);
 
 
+=======
+>>>>>>> MaJ Github
 #endif // !WHICHWAY_H

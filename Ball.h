@@ -11,6 +11,8 @@
 #define BALL_H
 
 #include "Commands.h"
+#include "DetectBall.h"
+#include "Variables.h"
 
 using namespace std;
 using namespace cv;

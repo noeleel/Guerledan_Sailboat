@@ -15,9 +15,9 @@
 #define DETECTBALL_H
 
 #include "Config.h"
-#include "Variables.h"
 #include "OSCore.h"
-#include "rmatrix.h"
+#include "Variables.h"
+
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 

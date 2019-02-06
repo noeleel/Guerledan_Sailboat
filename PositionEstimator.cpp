@@ -10,7 +10,29 @@
 
 #include "PositionEstimator.h"
 
-void position_estimator( double vitesse, double theta)
+void define_var(){
+	X_hat  = Eigen::VectorXd(2); // state
+	U = Eigen::VectorXd(2); // external motion
+	Y = Eigen::VectorXd(1,1);;
+	Gx = Eigen::MatrixXd(2, 2); // covariance matrix 
+	A = Eigen::MatrixXd(2, 2); // state transition matrix
+	C = Eigen::MatrixXd(1, 2);
+	G_beta = Eigen::MatrixXd(1, 1);
+	G_alpha = Eigen::MatrixXd(2, 2);
+
+	X_hat << 0, 0;
+	Gx << 1000, 0, 0, 1000;
+	U << 0, 0;
+	Y << 0;
+	A << 0, 0, 0, 0;
+	C << 0, 0;
+	G_beta << 0;
+	G_alpha << 0, 0, 0, 0;
+
+	return;
+}
+
+void position_estimator(double vitesse, double theta)
 {
 	/*
 	estimation de position du robot
@@ -19,67 +41,53 @@ void position_estimator( double vitesse, double theta)
 		- destination: position a atteindre
 	*/
 	//Kalman Filter variables
-	Eigen::VectorXd X_hat;
-	Eigen::VectorXd u;
-	Eigen::VectorXd y;
-	Eigen::MatrixXd Gx;
-	Eigen::MatrixXd A;
-	Eigen::MatrixXd C;
-	Eigen::MatrixXd G_beta;
-	Eigen::MatrixXd G_alpha;
-
 	
-	X_hat = Eigen::VectorXd(2); //  state
-	X_hat << x_hat, y_hat;
 
-	Gx = Eigen::MatrixXd(2, 2); 	//  covariance matrix
-	Gx << 1000, 0, 0, 1000;
+	U << dt*cos(theta)*vitesse, dt*sin(theta)*vitesse;
 
-	u = Eigen::VectorXd(2);    // external motion
-	u << dt*cos(theta)*vitesse, dt*sin(theta)*vitesse;
-
-    y = Eigen::VectorXd(2);
-	y << 0, 0;
-
-	A = Eigen::MatrixXd(2, 2); // state transition matrix
-	A << 0, 0, 0, 0;
-
-	C = Eigen::MatrixXd(1, 2);
-	C << 0, 0;
-
-	G_beta = Eigen::MatrixXd(1, 1);
-	G_beta << 0;
-
-	G_alpha = Eigen::MatrixXd(2, 2);
-	G_alpha << 0, 0, 0, 0;
-
-	//call Kalman filter algorithm
-	filter_kalman(X_hat, Gx, u, y, G_alpha, G_beta, A, C);
+	filter_kalman(X_hat, Gx, U, Y, G_alpha, G_beta, A, C);
 
 	return;
 }
 
 
-void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd u, Eigen::VectorXd y, Eigen::MatrixXd G_alpha, Eigen::MatrixXd G_beta, Eigen::MatrixXd A, Eigen::MatrixXd C )
-{
-    Eigen::VectorXd ytilde = y - C * X_hat;
-    Eigen::MatrixXd Ct = C.transpose();
-    Eigen::MatrixXd S = C * Gx * Ct + G_beta;
-    Eigen::MatrixXd Si = S.inverse();
-    Eigen::MatrixXd K =  Gx * Ct * Si;
-	Eigen::MatrixXd I = Eigen::MatrixXd::Identity(2, 2);
+void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd U, Eigen::VectorXd Y, Eigen::MatrixXd G_alpha, Eigen::MatrixXd G_beta, Eigen::MatrixXd A, Eigen::MatrixXd C )
+{	
+
+	Eigen::VectorXd ytilde;
+	Eigen::MatrixXd Ct;
+	Eigen::MatrixXd S;
+	Eigen::MatrixXd Si;
+	Eigen::MatrixXd K;
+	Eigen::MatrixXd I;
+	Eigen::MatrixXd At;
+
+
+    Ct = C.transpose();
+    S = C * Gx * Ct + G_beta;
+    Si = S.inverse();
+    K =  Gx * Ct * Si;
+	ytilde = Y - C * X_hat;
+
+	I = Eigen::MatrixXd::Identity(2, 2);
 
     //kalman predictor
     X_hat = X_hat + (K * ytilde);
     Gx = (I - K * C) * Gx;
 
     // kalman corrector
-    X_hat = A * X_hat + u;
-    Eigen::MatrixXd At = A.transpose();
+    X_hat = A * X_hat + U;
+	At = A.transpose();
     Gx = A * Gx * At + G_alpha;
 
-    x_hat = X_hat(0);
-    y_hat = X_hat(1);
+	if (!(isnan(abs(X_hat(0)))))
+    	guer_boat_x = (double) X_hat(0);
+	else 
+		guer_boat_x = 0;
+	if (!(isnan(abs(X_hat(1)))))
+    	guer_boat_y = (double) X_hat(1);
+	else 
+		guer_boat_y = 0;
 
     return;
 }

@@ -22,19 +22,11 @@
 #include "Variables.h"
 #include "math.h"
 
+int compute_adjacency(float distance, float alpha, float r_vision);
+
+void compute_matrix(double List_of_buoys[4][2], int Matrix[4][4]);
+
+void mission_Indices(int List_indices[4] , double List_of_buoys[4][2]);
 
 
 #endif // !WHICHWAY_H
-
-
-/*
-
-Partie Elodie
-Definir ici quel chemin de bouées nous allons emprunter
-
-E : Point de départ & Point final
-
-Predictor ()
-
-S : Liste des points GPS à suivre ou le point Targer 
-*/

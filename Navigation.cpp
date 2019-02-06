@@ -42,7 +42,7 @@ void navigation_cap_favorable(double theta, double cap) {
 	double deltasmax = M_PI / 4.0 * (cos(psiw - theta) + 1);
 	commande_gouvernail = -deltar;
 	commande_voile = deltasmax;
-	// fprintf(stderr, "%f commande voile\n", commande_voile);
+	// fprintf(stderr, "%f commande voile\n", );
 	// fprintf(stderr, "%f commande gouvernail\n", commande_gouvernail);
 	return;
 }

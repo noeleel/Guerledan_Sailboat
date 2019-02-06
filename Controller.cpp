@@ -1,4 +1,4 @@
-// Prevent Visual Studio Intellisense from defining _WIN32 and _MSC_VER when we use 
+				// Prevent Visual Studio Intellisense from defining _WIN32 and _MSC_VER when we use 
 // Visual Studio to edit Linux or Borland C++ code.
 #ifdef __linux__
 #	undef _WIN32
@@ -9,108 +9,7 @@
 
 #include "Controller.h"
 
-
-bool vent_favorable(double cap) {
-	double psiw = Center(psitwindhat); // variable psi dans le code python
-	if (abs(fmod((psiw - M_PI - cap), (2 * M_PI))) <= M_PI / 4.0)
-	{
-		return FALSE;
-	}
-	else
-	{
-		return TRUE;
-	}
-}
-
-double commande_voile = 0.0;
-double commande_gouvernail = 0.0;
-
-void navigation_cap_favorable(double theta, double cap) {
-	double deltar = 0.0;
-	if (!vent_favorable(cap))
-	{
-		fprintf(stderr, "erreur nav cap favorable #########################");
-		return;
-	}
-	double psiw = Center(psitwindhat); // variable psi dans le code python
-	if (cos(theta - cap)>=0)
-	{
-		deltar = sin(theta - cap);
-	}
-	else
-	{
-		deltar = sign(sin(theta - cap),0.0);
-	}
-
-	double deltasmax = M_PI / 4.0 * (cos(psiw - theta) + 1);
-	commande_gouvernail = -deltar;
-	commande_voile = deltasmax;
-	// fprintf(stderr, "%f commande voile\n", commande_voile);
-	// fprintf(stderr, "%f commande gouvernail\n", commande_gouvernail);
-	return;
-}
-
-
-bool cap_correct(double theta, double cap, double tolerance = M_PI/12.0) {
-	double psiw = Center(psitwindhat); // variable psi dans le code python
-	if (abs(cap - theta) <= tolerance)
-	{
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
-}
-
-double angle_critique = M_PI/3.0;
-
-void navigation_cap(double theta, double cap, double temps_sequence=100) {
-	static int counter = -1;
-	//fprintf(stderr, "temps seq: %i\n", counter);
-	double psiw = Center(psitwindhat); // variable psi dans le code python
-	double alpha = 2.5;
-	double temps_gauche = temps_sequence*(1.0+(fmod(psiw-M_PI-cap,2.0*M_PI)/M_PI*4.0/alpha))/2.0;
-	if (vent_favorable(cap))
-	{
-		navigation_cap_favorable(theta, cap);
-	}
-	else
-	{
-		if ((counter <= temps_gauche) || (counter >= temps_sequence))
-		{
-			if (counter > temps_sequence)
-			{
-				counter = 0;
-			}
-			double cap1 = M_PI + psiw - angle_critique;
-			if (!cap_correct(theta,cap1))
-			{
-				navigation_cap_favorable(theta,cap1);
-			}
-			else
-			{
-				counter++;
-				navigation_cap_favorable(theta, cap1);
-			}
-		}
-		else
-		{
-			double cap2 = M_PI + psiw + angle_critique;
-			if (!cap_correct(theta,cap2))
-			{
-				navigation_cap_favorable(theta, cap2);
-			}
-			else
-			{
-				counter++;
-				navigation_cap_favorable(theta, cap2);
-			}
-		}
-	}
-}
-
-// int var1 = 0;
+bool flag_define_var = false;
 
 
 
@@ -142,7 +41,12 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 	clock_t endTime;
 	clock_t clockTicksTaken;
 	double timeInSeconds;
-
+	bool timer_print = true;
+	clock_t startTime_print;
+	clock_t endTime_print;
+	clock_t clockTicksTaken_print;
+	double timeInSeconds_print = 0;
+	
 #pragma region lognav
 	char lognavfilename[MAX_BUF_LEN];
 	FILE* lognavfile = NULL;
@@ -195,7 +99,11 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 	StartChrono(&chrono);
 
 	for (;;)
-	{
+	{	
+		if (flag_define_var == false){
+			define_var();
+			flag_define_var = true;
+		}
 		mSleep(controllerperiod);
 		t0 = t;
 		GetTimeElapsedChrono(&chrono, &t);
@@ -515,109 +423,169 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 		}
 
 
-		// BALL DETECTION
 	
-		//fprintf(stderr, "%d\n", vent_favorable(0.0));
-		if (detectratio_ball >= objMinDetectionRatio_ball && flag == FALSE) {
-			bBallFound = TRUE;
-			// 	printf("Ball found\n"); 
-			// 	// printf("%f,%f,%f\n", x_ball,y_ball,z_ball );
-			// 	printf("%f\n",objDistance_ball);
-			// 	// printf("%f\n",wpsi_ball);
-			flag = TRUE;
-			wxa = Center(xhat);
-			wxb = x_ball;
-			wya = Center(yhat);
-			wyb = y_ball;
-			norm_ba =  sqrt(pow(wxb-wxa,2)+pow(wyb-wya,2));
-			if (norm_ba != 0)
-				e = ((wxb-wxa)*(Center(yhat)-wya)-(wyb-wya)*(Center(xhat)-wxa))/(norm_ba);
-			else 
-				e = 0;
-			phi = atan2(wyb-wya,wxb-wxa);
-			// Compute wpsi thanks to the distance to the ball
-			wpsi = phi-(2.0*gamma_infinite/M_PI)*atan2(e,radius); // theta_star
-		}
+		// Override value of sensors here 
+		double theta = Center(psihat);
+		//Vitesse
+		//vrxhat = sqrt(sqr(Center(xhat-xhat_prev))+sqr(Center(yhat-yhat_prev)))/dt+vrxdotnoise
+		// Assert safety  before using this function
+
+		norm_ma = sqrt(pow(Center(xhat)-wxa,2)+pow(Center(yhat)-wya,2)); // Distance from the beginning of the line (norm of m-a).	
+		norm_bm = sqrt(pow(wxb-Center(xhat),2)+pow(wyb-Center(yhat),2)); // Distance to the destination waypoint of the line (norm of b-m).	
+
+		if ((norm_ma != 0)&&(norm_ba != 0))
+			sinalpha = ((wxb-wxa)*(Center(yhat)-wya)-(wyb-wya)*(Center(xhat)-wxa))/(norm_ma*norm_ba);
 		else 
-			bBallFound = FALSE;
-			// printf("Ball not found");
+			sinalpha = 0;
 
-		// detection de ball
-		if (tour  == true)
-		{
-			if (timer == true)
-			{
-				startTime = clock();
-				timer = false;
-			}
-			endTime = clock();
-			clockTicksTaken = endTime - startTime;
-			timeInSeconds = (clockTicksTaken / (double) CLOCKS_PER_SEC);
-			// printf("%f\n",timeInSeconds);
-			
-			if (timeInSeconds >= 2)
-			{
-				wpsi = wpsi + M_PI/2;
+		e = norm_ma*sinalpha; // Distance to the line (signed).
 
-				startTime = clock();
-				tour_comp = tour_comp + 1;
-				// printf("1/4 tour numero %d\n",tour_comp);
-				timer == true;
-			}
-			else 
-			{
-				wpsi = wpsi;
-			}
-			if (tour_comp ==4)
-			{
-				tour = false;
-				tour_comp = 0;
-			}
+		xte = e; // XTE as in GPS...
+
+		wpsi = LineFollowing(phi, e, gamma_infinite, radius); // theta
+		
+		// Assert safety before using this function
+		position_estimator(Center(vrxhat), theta);
+		InSafety = IsItSafe();
+		IsSecure = AssertVariablesClose();
+		if (!IsSecure){
+			guer_boat_x = getPosition_x();
+			guer_boat_y = getPosition_y();
 		}
-		else
-		{
-			if (detectratio_ball >= objMinDetectionRatio_ball) 
+		if(SelectController(InSafety)){
+			
+			// BALL DETECTION
+			#pragma region Actions for ball detection	
+			//fprintf(stderr, "%d\n", vent_favorable(0.0));
+			if (ballFound) {
+				// 	printf("Ball found\n"); 
+				// 	// printf("%f,%f,%f\n", x_ball,y_ball,z_ball );
+				// 	printf("%f\n",objDistance_ball);
+				// 	// printf("%f\n",wpsi_ball);
+				flag = TRUE;
+				wxa = Center(xhat);
+				wxb = ball_x;
+				wya = Center(yhat);
+				wyb = ball_y;
+				norm_ba =  sqrt(pow(wxb-wxa,2)+pow(wyb-wya,2));
+				if (norm_ba != 0)
+					e = ((wxb-wxa)*(Center(yhat)-wya)-(wyb-wya)*(Center(xhat)-wxa))/(norm_ba);
+				else 
+					e = 0;
+				phi = atan2(wyb-wya,wxb-wxa);
+				// Compute wpsi thanks to the distance to the ball
+				wpsi = phi-(2.0*gamma_infinite/M_PI)*atan2(e,ball_radius); // theta_star
+			}
+			// detection de ball
+			if (tour  == true)
 			{
-				if (objDistance_ball >= 1)
-				{	
-					// printf("Ball found\n"); 
-					wpsi = wpsi - M_PI/4;
-					tour = true;
+				if (timer == true)
+				{
+					startTime = clock();
+					timer = false;
+				}
+				endTime = clock();
+				clockTicksTaken = endTime - startTime;
+				timeInSeconds = (clockTicksTaken / (double) CLOCKS_PER_SEC);
+				// printf("%f\n",timeInSeconds);
+				
+				if (timeInSeconds >= 2)
+				{
+					wpsi = wpsi + M_PI/2;
+
+					startTime = clock();
 					tour_comp = tour_comp + 1;
 					// printf("1/4 tour numero %d\n",tour_comp);
+					timer == true;
+				}
+				else 
+				{
+					wpsi = wpsi;
+				}
+				if (tour_comp ==4)
+				{
+					tour = false;
+					tour_comp = 0;
 				}
 			}
-			else 
+			else
 			{
-				// printf("Ball not found\n");
-				wpsi = phi-(2.0*gamma_infinite/M_PI)*atan2(e,radius);
+				if (ballFound) 
+				{
+					if (ball_distance >= 1)
+					{	
+						// printf("Ball found\n"); 
+						wpsi = wpsi - M_PI/4;
+						tour = true;
+						tour_comp = tour_comp + 1;
+						// printf("1/4 tour numero %d\n",tour_comp);
+					}
+				}
+				else 
+				{
+					// printf("Ball not found\n");
+					wpsi = phi-(2.0*gamma_infinite/M_PI)*atan2(e,ball_radius);
+				}
 			}
-		}
 
-		if(bBallFound == TRUE)
-		{
-			if (norm_ba != 0)
-				e = ((wxb-wxa)*(Center(yhat)-wya)-(wyb-wya)*(Center(xhat)-wxa))/(norm_ba);
+			if(ballFound)
+			{
+				if (norm_ba != 0)
+					e = ((wxb-wxa)*(Center(yhat)-wya)-(wyb-wya)*(Center(xhat)-wxa))/(norm_ba);
+				else 
+					e = 0;
+				wpsi = phi-(2.0*gamma_infinite/M_PI)*atan2(e,ball_radius); 
+
+			}
+			#pragma endregion
+			// END BALL DETECTION PART
+			get_gps();
+			controller(guer_boat_x, guer_boat_y, theta, ball_x , ball_y);
+
+			
+			norm_ma = sqrt(pow(guer_boat_x-wxa,2)+pow(guer_boat_y-wya,2)); // Distance from the beginning of the line (norm of m-a).	
+			norm_bm = sqrt(pow(wxb-guer_boat_x,2)+pow(wyb-guer_boat_y,2)); // Distance to the destination waypoint of the line (norm of b-m).	
+
+			if ((norm_ma != 0)&&(norm_ba != 0))
+				sinalpha = ((wxb-wxa)*(guer_boat_y-wya)-(wyb-wya)*(guer_boat_x-wxa))/(norm_ma*norm_ba);
 			else 
-				e = 0;
-			wpsi = phi-(2.0*gamma_infinite/M_PI)*atan2(e,radius); 
+				sinalpha = 0;
 
+			e = norm_ma*sinalpha; // Distance to the line (signed).
+
+			xte = e; // XTE as in GPS...
+
+			wpsi = LineFollowing(phi, e, gamma_infinite, radius); // theta
+				
+			u = commande_voile;
+			uw = commande_gouvernail;
 		}
-		// END BALL DETECTION PART
-	
 
-		double theta = Center(psihat);
-		//double cap_voulu = -M_PI / 2.0;
-		// fprintf(stderr, "%f theta \n", theta);
-		// fprintf(stderr, "%f cap voulu \n", cap);
+		if (timer_print == true)
+		{
+			startTime_print = clock();
+			timer_print = false;
+		}
+		endTime_print = clock();
+		clockTicksTaken_print = endTime_print - startTime_print;
+		timeInSeconds_print = (clockTicksTaken_print / (double) CLOCKS_PER_SEC);
+		if (timeInSeconds_print > 3){
+			printf("%f\n", timeInSeconds_print);
+			printf("Security Zone : %d\n", InSafety);
+			printf("Variables Safe : %d\n", IsSecure);
 
-		navigation_cap(theta, wpsi);
-		// fprintf(stderr, "%f theta \n", theta);
+			printf("Latitude boat : %f\n", latitude);
+			printf("Longitude boat : %f\n", longitude);
 
+			printf("Real x  boat : %f\n", getPosition_x());
+			printf("Real y boat : %f\n", getPosition_y());
+			printf("Estimated x boat : %f\n", guer_boat_x);
+			printf("Estimated y boat : %f\n", guer_boat_y);
 
-		u = commande_voile;
-		uw = commande_gouvernail;
-
+			timeInSeconds_print = 0;
+			timer_print = true;
+			fflush(stdout);
+		}
 
 		// fprintf(stderr, "%f commande gouvernail \n", commande_gouvernail);
 		// fprintf(stderr, "%f uw \n", uw);

@@ -18,16 +18,24 @@
 */
 
 #include <iostream>
-#include "Config.h"
+#include <Eigen/Dense>
+#include <vector>
+#include "Globals.h"
+
+using namespace Eigen;
+
 
 // Define Variables here
+
+extern double List_of_buoys[4][2];
 
 extern double guer_boat_x;
 extern double guer_boat_y;
 extern double commande_voile;
-extern double commande_gourvernail;
+extern double commande_gouvernail;
 extern double angle_critique;
 extern bool IsSecure;
+extern bool InSafety;
 extern double latitude;
 extern double longitude;
 extern double wind_angle;
@@ -49,10 +57,6 @@ extern double y;
 extern double gps_x;
 extern double gps_y;
 
-extern double x_hat;
-extern double y_hat;
-extern double dt;
-
 extern double waypoint_x;
 extern double waypoint_y;
 extern double gps_waypoint_x;
@@ -66,9 +70,29 @@ extern double sail_max_angle;
 
 extern double ball_x;
 extern double ball_y;
+extern double ball_z;
 
 extern double ball_distance;
+extern double ball_radius;
 
+extern bool ballFound;
+
+extern double x_hat;
+extern double y_hat;
+extern double dt;
+
+extern cv::Mat ovlImage;
+
+extern double vitesse;
+
+extern Eigen::VectorXd X_hat;
+extern Eigen::VectorXd U;
+extern Eigen::VectorXd Y;
+extern Eigen::MatrixXd Gx;
+extern Eigen::MatrixXd A;
+extern Eigen::MatrixXd C;
+extern Eigen::MatrixXd G_beta;
+extern Eigen::MatrixXd G_alpha;
 // Getter functions
 
 double getLatitude(double latitude = lat_env);

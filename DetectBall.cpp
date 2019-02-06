@@ -17,14 +17,15 @@
 
 void detect_ball(IplImage* image, IplImage* overlayimage, bool ballFound){
     cv::Mat initImage = cv::cvarrToMat(image, true);
-    cv::Mat gaussianImage = cv::cvarrToMat(image, false);
-    cv::Mat hSVImage = cv::cvarrToMat(image, false);
+    cv::Mat gaussianImage = cv::cvarrToMat(image, true);
+    cv::Mat hSVImage = cv::cvarrToMat(image, true);
     cv::Mat mask, thresh, hull;
-    cv::Mat ovlImage = cv::cvarrToMat(overlayimage, true);
+    ovlImage = cv::cvarrToMat(overlayimage, false);
     cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 3, 3 ));
     cv::Moments oMoments;
     vector <vector <Point> > contours;
     vector <Point> cont;
+    cv::Mat cnt;
     double cnt_len, radius, aArea, dM01, dM10, dM00;
     cv::RotatedRect eEllipse;
     cv::Rect rRect;
@@ -56,8 +57,9 @@ void detect_ball(IplImage* image, IplImage* overlayimage, bool ballFound){
     // Compute x,y coordinate of center
     ball_x = (dM00 == 0) ?  0 : (int) (dM10/dM00);
     ball_y = (dM00 == 0) ?  0 : (int) (dM01/dM00);
-
-    ball_distance = (double) sqrt(pow(ball_x, 2) + pow(ball_y, 2));
+    
+    // 0.0002645833 for converting pixels to meters
+    ball_distance = (double) sqrt(pow(ball_x*0.0002645833, 2) + pow(ball_y*0.0002645833, 2));
     // Some contours are found, let's process them
     if((int) contours.size() != 0){
         // Stack the contours
@@ -67,18 +69,21 @@ void detect_ball(IplImage* image, IplImage* overlayimage, bool ballFound){
         
         // Approximate them as a ellipse-like shape. 
         cnt_len = cv::arcLength(cont, true);
-        cv::approxPolyDP((cv::Mat) cont, (cv::Mat)  cont, 0.01*cnt_len, true);
-        cv::convexHull((cv::Mat)  cont, hull);
+        cv::approxPolyDP((cv::Mat)cont, cnt, 0.01*cnt_len, true);
+        
+        cv::convexHull(cnt, hull);
 
-        hull_length =  sizeof(hull);
+        hull_length =  (int) hull.rows * hull.cols;
         // If we have enough points in the shape, process it 
-        if(hull_length > 4){
+        if(hull_length > 5){
             // Shape it as an ellipse
+	        fflush(stdout);
             eEllipse = cv::fitEllipse(hull);
+            fflush(stdout);
 
             // Draw the ellipse
             cv::ellipse(ovlImage, eEllipse, Scalar(ELLIPSE_COLOR_R, ELLIPSE_COLOR_G, ELLIPSE_COLOR_B));
-            radius = 0;
+            ball_radius = 0;
 
             // Draw the best bouding rectangle
             rRect = cv::boundingRect(hull);
@@ -86,11 +91,12 @@ void detect_ball(IplImage* image, IplImage* overlayimage, bool ballFound){
             aArea = cv::contourArea(hull);
 
             // Find the radius of the shape (we assume it is almost a circle, though it is not always true)
-            radius = sqrt((float) ((aArea * 2.54/300.0)/M_PI));
+            ball_radius = sqrt((float) (aArea * pow(0.0002645833,2) /M_PI));
 
             // Assert the object is a ball. Tried with the ellipse eccentricity but it gave me absurd result
             // So I made an approximation with the properties of the bouding rectangle. (Almost work)
-            ballFound = (abs((long) (rRect.height - rRect.width)) < 4) ? true : false;
+            ballFound = (abs((long) (rRect.height - rRect.width)) < 40) ? true : false;
+
         }
     }
 }

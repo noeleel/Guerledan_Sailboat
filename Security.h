@@ -22,9 +22,13 @@
 #include "Config.h"
 #include "Variables.h"
 
+#define MIN_LONGITUDE 3.0147400
+#define MAX_LONGITUDE 3.0167500
+#define MIN_LATITUDE 48.198900
+#define MAX_LATITUDE 48.200800
 
 // Define the safety Zone here 
-bool IsItSafe(double x_boat, double y_boat); // Should be modified to take into account the environment
+bool IsItSafe(); // Should be modified to take into account the environment
 
 bool AssertVariablesClose(void); // If the variables are too far from the true variables, 
 // take the true values

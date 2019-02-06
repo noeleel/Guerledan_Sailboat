@@ -21,12 +21,16 @@
 
 #include <iostream>
 #include <vector>
+#include <Eigen/Dense>
+#include "math.h"
 
 using namespace Eigen;
 
+void define_var();
+
 void position_estimator(double vitesse, double theta);
 
-void filter_kalman(VectorXd X_hat, MatrixXd Gx, VectorXd u, VectorXd z,MatrixXd G_alpha, MatrixXd G_beta, MatrixXd A, MatrixXd C );
+void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd u, Eigen::VectorXd z,Eigen::MatrixXd G_alpha, Eigen::MatrixXd G_beta, Eigen::MatrixXd A, Eigen::MatrixXd C );
 
 
 #endif // !POSITIONESTIMATOR_H

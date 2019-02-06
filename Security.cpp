@@ -15,25 +15,27 @@
 
 #include "Security.h"
 
-
-bool IsItSafe(double x_boat, double y_boat){
-    double real_x_boat = getPosition_x();
-    double real_y_boat = getPosition_y();
-    if (x_boat == real_x_boat && y_boat == real_y_boat)
+bool IsItSafe(){
+    double latitude = getLatitude();
+    double longitude = getLongitude();
+    if ((abs(latitude) > MIN_LATITUDE )&& (abs(latitude) < MAX_LATITUDE) && (abs(longitude) > MIN_LONGITUDE) && (abs(longitude) < MAX_LONGITUDE) )
         return true;
     else
         return false;
 };
 
 bool AssertVariablesClose(void){
-
     bool InSafety = true;
+    // Check for the safety of x and y 
     double real_x_boat = getPosition_x();
     double real_y_boat = getPosition_y();
-    if (abs(guer_boat_x - real_x_boat) < 1 and abs(guer_boat_y == real_y_boat) < 1)
+    if ((abs(guer_boat_x - real_x_boat) < 10) || (abs(guer_boat_y - real_y_boat) < 10))
         InSafety = true;
     else
         InSafety = false;
+    // Check for the safety of the speed
+
+    // Check for the safety of the wind 
     return InSafety;
 }
 

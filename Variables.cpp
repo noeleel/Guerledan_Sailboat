@@ -18,13 +18,10 @@
 double guer_boat_x = 0;
 double guer_boat_y = 0;
 double commande_voile = 0;
-double commande_gourvernail = 0;
+double commande_gouvernail = 0;
 double angle_critique = M_PI/3.0;
 bool IsSecure = true;
-
-double dt =  0.1;
-double x_hat;
-double y_hat;
+bool InSafety = true;
 
 double latitude;
 double longitude;
@@ -63,8 +60,28 @@ double ball_y;
 double ball_z;
 
 double ball_distance;
+double ball_radius;
 
 bool ballFound;
+
+double dt =  0.1;
+double x_hat;
+double y_hat;
+double List_of_buoys[4][2];
+
+double vitesse;
+
+cv::Mat ovlImage;
+
+Eigen::VectorXd X_hat;// state
+Eigen::VectorXd U; // external motion
+Eigen::VectorXd Y;
+Eigen::MatrixXd Gx; // covariance matrix 
+Eigen::MatrixXd A; // state transition matrix
+Eigen::MatrixXd C;
+Eigen::MatrixXd G_beta;
+Eigen::MatrixXd G_alpha;
+
 
 double getLatitude(double latitude){
     return latitude;
@@ -158,3 +175,5 @@ double getBall_y(double y){
 double getBalldistance(void){
     return (double) 1.0;
 };
+
+// vitesse vrxhat = sqrt(sqr(Center(xhat-xhat_prev))+sqr(Center(yhat-yhat_prev)))/dt+vrxdotnoise

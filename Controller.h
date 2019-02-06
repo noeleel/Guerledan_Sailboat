@@ -12,7 +12,10 @@
 
 #include "Config.h"
 #include "Navigation.h"
+#include "PositionEstimator.h"
 #include "OurController.h"
+#include "Security.h"
+#include "Variables.h"
 
 THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam);
 

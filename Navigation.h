@@ -15,11 +15,9 @@
 #define NAVIGATION_H
 
 #include "Config.h"
+#include "Variables.h"
 
 // Define Macro for the functions here
-#define commande_voile 0.0
-#define commande_gourvernail 0.0
-#define angle_critique M_PI/3.0
 
 bool vent_favorable(double cap);
 

@@ -13,6 +13,14 @@
     File created for the SAILBOAT Project in Guerledan
     Used for defining the function for navigating with the Sailboat
 */
+void get_gps()
+{
+    if (ball_distance < 3){
+        guer_boat_x = Center(xhat);
+        guer_boat_y = Center(yhat);
+    }
+}
+
 
 double calcul_cap(double x_robot, double y_robot, double x_ball , double y_ball)
 {
@@ -23,7 +31,7 @@ double calcul_cap(double x_robot, double y_robot, double x_ball , double y_ball)
     return cap;
 }
 
-def controller(double x_robot, double y_robot, double theta, double x_ball , double y_ball)
+void controller(double x_robot, double y_robot, double theta, double x_ball , double y_ball)
 {
     /*
     inputs:
@@ -32,7 +40,7 @@ def controller(double x_robot, double y_robot, double theta, double x_ball , dou
     outputs:
         recalcule des commandes: commande_voile et commande_gourvernail
     */
-    cap = calcul_cap(double x_robot, double y_robot, double x_ball , double y_ball);
+    cap = calcul_cap(x_robot, y_robot, x_ball , y_ball);
     navigation_cap(theta,cap);
     return;
 }

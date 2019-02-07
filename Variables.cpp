@@ -64,7 +64,6 @@ double ball_radius;
 
 bool ballFound;
 
-double dt =  0.1;
 double x_hat;
 double y_hat;
 double List_of_buoys[4][2];

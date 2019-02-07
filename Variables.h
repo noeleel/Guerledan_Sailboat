@@ -79,7 +79,6 @@ extern bool ballFound;
 
 extern double x_hat;
 extern double y_hat;
-extern double dt;
 
 extern cv::Mat ovlImage;
 

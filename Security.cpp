@@ -33,23 +33,14 @@ bool AssertVariablesClose(void){
         InSafety = true;
     else
         InSafety = false;
-    // Check for the safety of the speed
-
-    // Check for the safety of the wind 
     return InSafety;
 }
 
 bool SelectController(bool safe){
     bool UseOurController = true;
-    switch(safe){
-        case true:
-            UseOurController = true;
-        case false:
-            UseOurController = false;
-
-        default:
-            UseOurController = false;
-
-    }
+    if(safe)
+        UseOurController = true;
+    else
+        UseOurController = false;
     return UseOurController;
 };

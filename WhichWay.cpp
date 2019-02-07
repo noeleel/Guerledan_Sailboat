@@ -52,7 +52,7 @@ void mission_Indices(int List_indices[4] , double List_of_buoys[4][2]){
     int Adjacency_Matrix[4][4] ;
     compute_matrix(List_of_buoys, Adjacency_Matrix);
     for(i=0; i<4; i++){
-        if (Adjacency_Matrix[i][(i+1)%4] == 1 and i!=j){
+        if (Adjacency_Matrix[i][(i+1)%4] == 1 && i!=j){
             List_indices[(i+1)%4]= i+1;
         }
     }

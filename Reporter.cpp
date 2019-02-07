@@ -19,7 +19,7 @@ void createLogFile(){
    time_t now_time = time(0);
    
    // convert now to string form
-   char* current_time = ctime(&now);
+   char* current_time = ctime(&now_time);
 
    // convert now to tm struct for UTC
    tm *gmtm = gmtime(&now_time);

@@ -7,7 +7,7 @@ import numpy as np
 
 global Abouee, Dbouee, Anavgateur
 Abouee = 45 # angle du triangle à la bouée
-Dbouee = 20 # longueur de la hauteur du triangle de détection passant par la bouée
+Dbouee = 30 # longueur de la hauteur du triangle de détection passant par la bouée
 Anavgateur = 10 # écart possible en angle du navire (par rapport au centre)
 
 

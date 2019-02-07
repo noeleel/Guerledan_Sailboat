@@ -46,6 +46,8 @@ def name_to_id(x):
         return 2
     if x == 'B4':
         return 3
+    if x == 'B5':
+        return 4
 
 def mission(x):
     nav_bouee(x)
@@ -53,10 +55,10 @@ def mission(x):
 
     
 m_a = adjacency_matrix(initial_x[:2,:],liste_centre_bouee)
-p = path_matrix(l=['N','B1','B2','B3','B4'], m = m_a)
+p = path_matrix(l=['N','B1','B2','B3','B4','B5'], m = m_a)
     
 best_path = get_best_path(target,liste_centre_bouee,p).l[1:]
 liste_bouees_nav = [name_to_id(x) for x in best_path]
 nav_bouee.bouee_suivante = liste_bouees_nav[0] # définition d'une variable statique pour la fonction nav_bouee
-print(liste_bouees_nav,nav_bouee.bouee_suivante)
+# print(liste_bouees_nav,nav_bouee.bouee_suivante)
 

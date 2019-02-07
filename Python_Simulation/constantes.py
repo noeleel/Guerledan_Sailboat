@@ -14,9 +14,14 @@ awind,ψ = 5,0.01 # vitesse et angle du vent
 
 # Coordonnées des bouées:
 #liste_centre_bouee = [array([[50],[-75]]),array([[100],[-25]]),array([[100],[25]]),array([[50],[75]])]
-liste_centre_bouee = [np.array([[75],[-75]]),np.array([[100],[-25]]),np.array([[100],[25]]),np.array([[75],[75]])]
-rayon_gps_bouee = 20 # rayon autour de la bouée dans lequel on a le gps
+liste_centre_bouee = [np.array([[-75],[-25]]),np.array([[-25],[25]]),np.array([[50],[0]]),np.array([[125],[25]]),np.array([[175],[-50]])]
+rayon_gps_bouee = 10 # rayon autour de la bouée dans lequel on a le gps
 
-target = 4 # bouée visée
+target = 5 # bouée visée
 
-initial_x = array([[25.,-75.,0.,0.,0.]]).T
+initial_x = array([[-150,0.,0.,0.,0.]]).T
+
+# zone de securite 
+zone = np.array([[-175.0,-160.0,-60.0,120.0,150.0,195.0,195.0,185.0,160.0,120.0,-90.0,-120.0,-140.0,-195.0,-195.0,-175.0],
+				[-95.0,-50.0,-60.0,-15.0,-90.0,-85.0,95.0,95.0,65.0,70.0,20.0,20.0,95.0,95.0,-95.0,-95.0]])
+distance_securite = 30 # distance evitee entre le robot et les cotes

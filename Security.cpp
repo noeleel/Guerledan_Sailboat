@@ -49,9 +49,6 @@ bool AssertVariablesClose(void){
         InSafety = true;
     else
         InSafety = false;
-    // Check for the safety of the speed
-
-    // Check for the safety of the wind 
     return InSafety;
 }
 

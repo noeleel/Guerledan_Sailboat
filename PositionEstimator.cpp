@@ -32,11 +32,15 @@ void define_var(){
 	return;
 }
 
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 <<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 void position_estimator(double vitesse, double theta, double dt)
 =======
 void position_estimator(double vitesse, double theta)
 >>>>>>> MaJ Github
+=======
+void position_estimator(double vitesse, double theta, double dt)
+>>>>>>>  Add last functional version of sailboat
 {
 	/*
 	estimation de position du robot
@@ -58,6 +62,7 @@ void position_estimator(double vitesse, double theta)
 
 void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd U, Eigen::VectorXd Y, Eigen::MatrixXd G_alpha, Eigen::MatrixXd G_beta, Eigen::MatrixXd A, Eigen::MatrixXd C )
 {	
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 =======
 
 	U << dt*cos(theta)*vitesse, dt*sin(theta)*vitesse;
@@ -72,6 +77,8 @@ void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd U,
 {	
 
 >>>>>>> MaJ Github
+=======
+>>>>>>>  Add last functional version of sailboat
 	Eigen::VectorXd ytilde;
 	Eigen::MatrixXd Ct;
 	Eigen::MatrixXd S;
@@ -97,12 +104,17 @@ void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd U,
     X_hat = A * X_hat + U;
 	At = A.transpose();
     Gx = A * Gx * At + G_alpha;
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 <<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 	
 	
 =======
 
 >>>>>>> MaJ Github
+=======
+	
+	
+>>>>>>>  Add last functional version of sailboat
 	if (!(isnan(abs(X_hat(0)))))
     	guer_boat_x = (double) X_hat(0);
 	else 

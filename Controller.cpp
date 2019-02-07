@@ -9,10 +9,13 @@
 
 #include "Controller.h"
 
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 <<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 =======
 bool flag_define_var = false;
 >>>>>>> MaJ Github
+=======
+>>>>>>>  Add last functional version of sailboat
 
 
 
@@ -117,6 +120,7 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 	guer_boat_y = getPosition_y();
 	for (;;)
 	{	
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 <<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 =======
 		if (flag_define_var == false){
@@ -124,6 +128,8 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 			flag_define_var = true;
 		}
 >>>>>>> MaJ Github
+=======
+>>>>>>>  Add last functional version of sailboat
 		mSleep(controllerperiod);
 		t0 = t;
 		GetTimeElapsedChrono(&chrono, &t);
@@ -445,6 +451,7 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 
 	
 		// Override value of sensors here 
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 <<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 		//Vitesse
 
@@ -513,9 +520,9 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 
 =======
 		double theta = Center(psihat);
+=======
+>>>>>>>  Add last functional version of sailboat
 		//Vitesse
-		//vrxhat = sqrt(sqr(Center(xhat-xhat_prev))+sqr(Center(yhat-yhat_prev)))/dt+vrxdotnoise
-		// Assert safety  before using this function
 
 		norm_ma = sqrt(pow(Center(xhat)-wxa,2)+pow(Center(yhat)-wya,2)); // Distance from the beginning of the line (norm of m-a).	
 		norm_bm = sqrt(pow(wxb-Center(xhat),2)+pow(wyb-Center(yhat),2)); // Distance to the destination waypoint of the line (norm of b-m).	
@@ -528,78 +535,37 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 		e = norm_ma*sinalpha; // Distance to the line (signed).
 
 		xte = e; // XTE as in GPS...
+		phi = atan2(wyb-wya,wxb-wxa);
 
 		wpsi = LineFollowing(phi, e, gamma_infinite, radius); // theta
 		
 		// Assert safety before using this function
-		position_estimator(Center(vrxhat), theta);
+		// position_estimator(vitesse, wpsi, dt);
 		InSafety = IsItSafe();
-		IsSecure = AssertVariablesClose();
-		if (!IsSecure){
-			guer_boat_x = getPosition_x();
-			guer_boat_y = getPosition_y();
-		}
-		if(SelectController(InSafety)){
+		if(!SelectController(InSafety)){
 			
 			// BALL DETECTION
+			
+				ball_ind+=1;
+				//switch(ball_ind){
+				//	case 0:
+				//		EnvCoordSystem2GPS((double)Origin_lat , (double) Origin_long, alt_env, angle_env, wxa, wya, wz, &wlata, &wlonga, &walt);
+				//		EnvCoordSystem2GPS((double)Ball_1_lat, (double)Ball_1_long, alt_env, angle_env, wxb, wyb, wz, &wlatb, &wlongb, &walt);
+				//	case 1:
+				//		EnvCoordSystem2GPS((double)Ball_1_lat , (double) Ball_1_long, alt_env, angle_env, wxa, wya, wz, &wlata, &wlonga, &walt);
+				//		EnvCoordSystem2GPS((double)Ball_2_lat, (double)Ball_2_long, alt_env, angle_env, wxb, wyb, wz, &wlatb, &wlongb, &walt);
+				//	case 2:
+				//		EnvCoordSystem2GPS((double)Ball_2_lat , (double) Ball_2_long, alt_env, angle_env, wxa, wya, wz, &wlata, &wlonga, &walt);
+				//		EnvCoordSystem2GPS((double)Origin_lat, (double)Origin_long, alt_env, angle_env, wxb, wyb, wz, &wlatb, &wlongb, &walt);
+				//}
+				flag = TRUE;
+				phi = atan2(wyb-wya,wxb-wxa);
+				// Compute wpsi thanks to the distance to the ball
+				wpsi =  LineFollowing(phi, e, gamma_infinite, radius);
 			#pragma region Actions for ball detection	
 			//fprintf(stderr, "%d\n", vent_favorable(0.0));
 			if (ballFound) {
-				// 	printf("Ball found\n"); 
-				// 	// printf("%f,%f,%f\n", x_ball,y_ball,z_ball );
-				// 	printf("%f\n",objDistance_ball);
-				// 	// printf("%f\n",wpsi_ball);
-				flag = TRUE;
-				wxa = Center(xhat);
-				wxb = ball_x;
-				wya = Center(yhat);
-				wyb = ball_y;
-				norm_ba =  sqrt(pow(wxb-wxa,2)+pow(wyb-wya,2));
-				if (norm_ba != 0)
-					e = ((wxb-wxa)*(Center(yhat)-wya)-(wyb-wya)*(Center(xhat)-wxa))/(norm_ba);
-				else 
-					e = 0;
-				phi = atan2(wyb-wya,wxb-wxa);
-				// Compute wpsi thanks to the distance to the ball
-				wpsi = phi-(2.0*gamma_infinite/M_PI)*atan2(e,ball_radius); // theta_star
-			}
-			// detection de ball
-			if (tour  == true)
-			{
-				if (timer == true)
-				{
-					startTime = clock();
-					timer = false;
-				}
-				endTime = clock();
-				clockTicksTaken = endTime - startTime;
-				timeInSeconds = (clockTicksTaken / (double) CLOCKS_PER_SEC);
-				// printf("%f\n",timeInSeconds);
-				
-				if (timeInSeconds >= 2)
-				{
-					wpsi = wpsi + M_PI/2;
-
-					startTime = clock();
-					tour_comp = tour_comp + 1;
-					// printf("1/4 tour numero %d\n",tour_comp);
-					timer == true;
-				}
-				else 
-				{
-					wpsi = wpsi;
-				}
-				if (tour_comp ==4)
-				{
-					tour = false;
-					tour_comp = 0;
-				}
-			}
-			else
-			{
-				if (ballFound) 
-				{
-					if (ball_distance >= 1)
+					if (ball_distance <= 1)
 					{	
 						// printf("Ball found\n"); 
 						wpsi = wpsi - M_PI/4;
@@ -608,45 +574,18 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 						// printf("1/4 tour numero %d\n",tour_comp);
 					}
 				}
-				else 
-				{
-					// printf("Ball not found\n");
-					wpsi = phi-(2.0*gamma_infinite/M_PI)*atan2(e,ball_radius);
-				}
-			}
+				
 
-			if(ballFound)
-			{
-				if (norm_ba != 0)
-					e = ((wxb-wxa)*(Center(yhat)-wya)-(wyb-wya)*(Center(xhat)-wxa))/(norm_ba);
-				else 
-					e = 0;
-				wpsi = phi-(2.0*gamma_infinite/M_PI)*atan2(e,ball_radius); 
-
+				controller(wxa, wxb, wpsi, wxb , wyb);
+				u = commande_voile;
+				uw = commande_gouvernail;
 			}
 			#pragma endregion
 			// END BALL DETECTION PART
-			get_gps();
-			controller(guer_boat_x, guer_boat_y, theta, ball_x , ball_y);
 
-			
-			norm_ma = sqrt(pow(guer_boat_x-wxa,2)+pow(guer_boat_y-wya,2)); // Distance from the beginning of the line (norm of m-a).	
-			norm_bm = sqrt(pow(wxb-guer_boat_x,2)+pow(wyb-guer_boat_y,2)); // Distance to the destination waypoint of the line (norm of b-m).	
-
-			if ((norm_ma != 0)&&(norm_ba != 0))
-				sinalpha = ((wxb-wxa)*(guer_boat_y-wya)-(wyb-wya)*(guer_boat_x-wxa))/(norm_ma*norm_ba);
-			else 
-				sinalpha = 0;
-
-			e = norm_ma*sinalpha; // Distance to the line (signed).
-
-			xte = e; // XTE as in GPS...
-
-			wpsi = LineFollowing(phi, e, gamma_infinite, radius); // theta
-				
-			u = commande_voile;
-			uw = commande_gouvernail;
-		}
+	
+		
+		
 
 >>>>>>> MaJ Github
 		if (timer_print == true)
@@ -657,11 +596,15 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 		endTime_print = clock();
 		clockTicksTaken_print = endTime_print - startTime_print;
 		timeInSeconds_print = (clockTicksTaken_print / (double) CLOCKS_PER_SEC);
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 <<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 		if (timeInSeconds_print > 10){
 =======
 		if (timeInSeconds_print > 3){
 >>>>>>> MaJ Github
+=======
+		if (timeInSeconds_print > 10){
+>>>>>>>  Add last functional version of sailboat
 			printf("%f\n", timeInSeconds_print);
 			printf("Security Zone : %d\n", InSafety);
 			printf("Variables Safe : %d\n", IsSecure);
@@ -674,15 +617,21 @@ THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam)
 			printf("Estimated x boat : %f\n", guer_boat_x);
 			printf("Estimated y boat : %f\n", guer_boat_y);
 
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 <<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
+=======
+>>>>>>>  Add last functional version of sailboat
 			printf("Ball found : %d\n", ballFound);
 			printf("Ball distance : %f\n", ball_distance);
 			printf("Ball_number : %d\n", ball_ind);
 
 			printf("Point A(%f, %f)\n", wxa, wya);
 			printf("Point B(%f, %f)\n", wxb, wyb);
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 =======
 >>>>>>> MaJ Github
+=======
+>>>>>>>  Add last functional version of sailboat
 			timeInSeconds_print = 0;
 			timer_print = true;
 			fflush(stdout);

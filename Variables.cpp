@@ -64,10 +64,13 @@ double ball_radius;
 
 bool ballFound;
 
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 <<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
 =======
 double dt =  0.1;
 >>>>>>> MaJ Github
+=======
+>>>>>>>  Add last functional version of sailboat
 double x_hat;
 double y_hat;
 double List_of_buoys[4][2];

@@ -19,11 +19,15 @@ void createLogFile(){
    time_t now_time = time(0);
    
    // convert now to string form
+<<<<<<< da2f41442163fe7c2b0e455853f7dcf57bf9b5cb
 <<<<<<< 23640b94544d6823898682ec695cb4b5547ebb41
    char* current_time = ctime(&now_time);
 =======
    char* current_time = ctime(&now);
 >>>>>>> MaJ Github
+=======
+   char* current_time = ctime(&now_time);
+>>>>>>>  Add last functional version of sailboat
 
    // convert now to tm struct for UTC
    tm *gmtm = gmtime(&now_time);

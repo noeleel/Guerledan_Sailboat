@@ -33,7 +33,7 @@ void position_estimator(double vitesse, double theta, double dt);
 
 =======
 
-void position_estimator(double vitesse, double theta);
+void position_estimator(double vitesse, double theta, double dt);
 
 >>>>>>> MaJ Github
 void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd u, Eigen::VectorXd z,Eigen::MatrixXd G_alpha, Eigen::MatrixXd G_beta, Eigen::MatrixXd A, Eigen::MatrixXd C );

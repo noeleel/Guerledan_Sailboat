@@ -17,6 +17,16 @@
 #include "Security.h"
 #include "Variables.h"
 
+
+#define Origin_lat 48.1997 // 48 11.9791 N 003 00.9541 W
+#define Origin_long -3.0159
+
+#define Ball_1_lat 48.2000 // 48°12.0020'N 3°0,9050'O
+#define Ball_1_long -3.01508
+
+#define Ball_2_lat 48.1995 // 48°11,9690'N 3°0.8840'O
+#define Ball_2_long -3.01473 
+
 THREAD_PROC_RETURN_VALUE ControllerThread(void* pParam);
 
 #endif // !CONTROLLER_H

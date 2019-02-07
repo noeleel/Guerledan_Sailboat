@@ -32,7 +32,7 @@ void define_var(){
 	return;
 }
 
-void position_estimator(double vitesse, double theta)
+void position_estimator(double vitesse, double theta, double dt)
 {
 	/*
 	estimation de position du robot
@@ -53,7 +53,6 @@ void position_estimator(double vitesse, double theta)
 
 void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd U, Eigen::VectorXd Y, Eigen::MatrixXd G_alpha, Eigen::MatrixXd G_beta, Eigen::MatrixXd A, Eigen::MatrixXd C )
 {	
-
 	Eigen::VectorXd ytilde;
 	Eigen::MatrixXd Ct;
 	Eigen::MatrixXd S;
@@ -79,7 +78,8 @@ void filter_kalman(Eigen::VectorXd X_hat, Eigen::MatrixXd Gx, Eigen::VectorXd U,
     X_hat = A * X_hat + U;
 	At = A.transpose();
     Gx = A * Gx * At + G_alpha;
-
+	
+	
 	if (!(isnan(abs(X_hat(0)))))
     	guer_boat_x = (double) X_hat(0);
 	else 
